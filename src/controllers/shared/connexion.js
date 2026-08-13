@@ -22,8 +22,7 @@ const setCookieSession = (res,sessionId) =>{
     res.cookie("token",token,{
         httpOnly: true,
         secure: signed,
-        sameSite:signed ? "None" : "Lax",
-        signed,
+        sameSite:signed ? "none" : "Lax",
         path: "/",
         maxAge: 365 * 24 * 3600000,
     })
