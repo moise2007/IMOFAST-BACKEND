@@ -29,8 +29,7 @@ const ROLES_CONNUS = ["bailleur", "locataire"]
 
 //lecture du token 
 const getToken = (req) => {
-    const signed = process.env.COOKIE_SECURE !== "false"
-    return signed ? req.signedCookies?.token : req.cookies?.token
+    return req.signedCookies?.token ?? null
 }
 
 
@@ -45,7 +44,7 @@ const createAuthMiddleware  = (role=[])=>async(req,res,next)=>{
   try{
     //recuperation du cookie
     const token = getToken(req)
-    console.log(token)
+    console.log("token: " +token)
     if(!token){
       return clearAndRespond(401,RESPONSES.tokenManquant)
     }
