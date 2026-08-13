@@ -1,0 +1,109 @@
+{
+    "success": {
+        "create_bien" : "Property created successfully",
+        "delete_bien": "Property deleted successfully",
+        "get_all_bien":"Your properties have been loaded successfully",
+        "load_one_bien" : "Property loaded successfully",
+        "update_bien": "Property updated successfully",
+
+        "create_annonce": "Listing created successfully",
+        "delete_annonce": "Listing deleted successfully",
+        "get_all_annonce": "Your listings have been loaded successfully",
+        "load_one_annonce": "Listing loaded successfully",
+        "update_annonce": "Listing updated successfully",
+        "update_status": "Status updated successfully",
+
+
+        "create_signalement" : "Your report has been received and will be processed shortly.",
+        "update_signalement" : "Your report has been successfully updated.",
+        "delete_signalement": "The report has been successfully deleted.",
+        "get_signalement" : "Reports have been loaded successfully",
+
+        "create_note" : "Your rating has been submitted successfully.",
+        "delete_note" : "Your rating has been successfully deleted.",
+        "get_note": "Ratings have been loaded successfully.",
+        "update_note": "Your rating has been successfully updated.",
+        
+        "get_profil": "Profiles have been loaded successfully.",
+        "create_notification": "The notification has been created successfully.",
+        "get_notification": "Notifications have been retrieved successfully.",
+        "mark_as_notification": "The notification has been marked as read.",
+        "mark_all_as_notification": "All notifications have been marked as read.",
+        "delete_notification": "The notification has been successfully deleted.",
+
+        "conversation_created": "Conversation created successfully",
+        "conversation_deleted": "Conversation deleted successfully",
+        "conversation_loaded": "Conversation loaded successfully",
+        "conversation_marked_as_read": "Conversation marked as read",
+
+
+        "message_created": "The message has been created successfully.",
+        "message_deleted": "The message has been successfully deleted.",
+        "message_updated": "The message has been successfully updated.",
+        "messages_loaded": "Messages have been loaded successfully.",
+
+        "add_favori": "Property added to your favorites",
+        "get_favoris": "Your favorites have been loaded successfully",
+        "load_favoris": "Favorites loaded successfully",
+        "remove_favori": "Property removed from your favorites",
+
+        "create_contract": "Contract created successfully",
+        "approve_contract": "Contract approved successfully",
+        "load_one_contract": "Contract loaded successfully",
+        "get_all_contract": "Contracts loaded successfully",
+        "update_contract": "Contract updated successfully",
+        "update_status_contract": "Contract status updated successfully",
+        "delete_contract": "Contract deleted successfully",
+
+        "create_evenement": "Event created successfully",
+        "delete_evenement": "Event deleted successfully",
+        "load_one_evenement": "Event loaded successfully",
+        "get_all_evenement": "Events loaded successfully",
+        "update_status_evenement": "Event status updated successfully",
+
+        "candidature_created" : "The application has been submitted successfully.",
+        "delete_candidature" : "The application has been deleted successfully.",
+        "loaded_candidature" : "The application has been loaded successfully.",
+        "update_candidature" : "Changes saved successfully.",
+        "get_candidature" : "Applications have been loaded successfully",
+        "reprogram_candidature": "The visit has been successfully rescheduled"
+    },
+    "error": {
+        "not_bailleur_annonce": "You are not the landlord of this listing",
+        "conversation_not_found": "Conversation not found.",
+        "message_not_found": "Message not found.",
+        "locataire_not_found": "This tenant does not exist",
+        "contract_not_found": "This contract does not exist",
+        "bien_not_found": "This property does not exist",
+        "bien_already_contract": "This property already has a contract",
+        "contract_already_approved": "You have already approved this contract",
+        "candidature_not_found" : "The application does not exist."
+        
+    },
+    "notification" : {
+        "application_received": {
+            "title": "Nouvelle demande de location",
+            "message": "{{user}} a envoyé une demande pour votre bien."
+        },
+        "application_cancelled_by_candidate": {
+            "title": "Demande annulée",
+            "message": "{{user}} a annulé sa demande pour votre bien."
+        },
+        "application_cancelled": {
+            "title": "Demande annulée",
+            "message": "Vous avez annulé votre demande de location."
+        },
+        "application_rejected": {
+            "title": "Demande refusée",
+            "message": "{{user}} a refusé votre demande de location."
+        },
+        "application_accepted": {
+            "title": "Demande acceptée",
+            "message": "{{user}} a accepté votre demande de location pour ce bien."
+        },
+        "application_updated": {
+            "title": "Demande modifiée",
+            "message": "{{user}} a modifié sa demande de location."
+        }
+    }
+}

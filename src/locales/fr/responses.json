@@ -1,0 +1,116 @@
+{
+    "success": {
+        "create_bien" : "création du bien éffectué avec succès",
+        "delete_bien": "Bien supprimé avec succès",
+        "get_all_bien": "Vos biens ont été chargés avec succès",
+        "load_one_bien" : "Bien chargé avec succès",
+        "update_bien": "Bien mis à jour avec succès",
+
+        "create_annonce": "Annonce créée avec succès",
+        "delete_annonce": "Annonce supprimée avec succès",
+        "get_all_annonce": "Vos annonces ont été chargées avec succès",
+        "load_one_annonce": "Annonce chargée avec succès",
+        "update_annonce": "Annonce mise à jour avec succès",
+        "update_status": "Statut mis à jour avec succès",
+
+        
+        "create_signalement" : "Votre signalement a été reçu et sera traité dans les plus brefs délais",
+        "update_signalement" : "La modification de votre signalement a été effectuée avec succès.",
+        "delete_signalement" : "La suppression du signalement a été effectuée avec succès.",
+        "get_signalement" : "Les signalements ont été chargés avec succès.",
+
+        "create_note" : "Votre note a été attribuée avec succès.",
+        "delete_note" : "La suppression de votre note a été effectuée avec succès.",
+        "get_note": "Les notes ont été correctement chargées.",
+        "update_note": "La modification de votre note a été effectuée avec succès.",
+
+        "get_profil": "Les profils ont été chargés avec succès.",
+
+        "create_notification": "La notification a été créée avec succès.",
+        "get_notification": "Les notifications ont été récupérées avec succès.",
+        "mark_as_notification": "La notification a été marquée comme lue.",
+        "mark_all_as_notification": "Toutes les notifications ont été marquées comme lues.",
+        "delete_notification": "La notification a été supprimée avec succès.",
+
+        "conversation_created": "Conversation créée avec succès",
+        "conversation_deleted": "Conversation supprimée avec succès",
+        "conversation_loaded": "Conversation chargée avec succès",
+        "conversation_marked_as_read": "Conversation marquée comme lue",
+
+        "message_created": "Le message a été créé avec succès.",
+        "message_deleted": "Le message a été supprimé avec succès.",
+        "message_updated": "Le message a été modifié avec succès.",
+        "messages_loaded": "Les messages ont été chargés avec succès.",
+
+        "add_favori": "Bien ajouté à vos favoris",
+        "get_favoris": "Vos favoris ont été chargés avec succès",
+        "load_favoris": "Favoris chargés avec succès",
+        "remove_favori": "Bien retiré de vos favoris",
+
+        "create_contract": "Contrat créé avec succès",
+        "approve_contract": "Contrat approuvé avec succès",
+        "load_one_contract": "Contrat chargé avec succès",
+        "get_all_contract": "Contrats chargés avec succès",
+        "update_contract": "Contrat modifié avec succès",
+        "update_status_contract": "Statut du contrat modifié avec succès",
+        "delete_contract": "Contrat supprimé avec succès",
+
+        "create_evenement": "Événement créé avec succès",
+        "delete_evenement": "Événement supprimé avec succès",
+        "load_one_evenement": "Événement chargé avec succès",
+        "get_all_evenement": "Événements chargés avec succès",
+        "update_status_evenement": "Statut de l'événement modifié avec succès",
+
+        "candidature_created" : "La candidature a été soumise avec succès.",
+        "delete_candidature" : "La candidature a été supprimée avec succès.",
+        "loaded_candidature" : "La candidature a été chargée avec succès.",
+        "update_candidature" : "Modification effectuée avec succès.",
+        "get_candidature" : "Les candidatures ont été chargées avec succès.",
+        "reprogram_candidature": "La visite a été reprogrammée avec succès",
+
+        "commentaire_response": "",
+        "commentaire_updated" : "",
+        "commentaire_deleted": "",
+        "commentaire_created": "",
+        "commentaire_get": ""
+    },
+    "error":{
+        "not_bailleur_annonce": "Vous n'êtes pas le bailleur de cette annonce",
+        "conversation_not_found": "La conversation est introuvable.",
+        "message_not_found": "Le message est introuvable.",
+        "locataire_not_found": "Ce locataire n'existe pas",
+        "contract_not_found": "Ce contrat n'existe pas",
+        "bien_not_found": "Ce bien n'existe pas",
+        "bien_already_contract": "Ce bien possède déjà un contrat",
+        "contract_already_approved": "Vous avez déjà accepté ce contrat",
+        "candidature_not_found" : "Cette candidature est introuvable.",
+        "commentaire_not_fount" : ""
+    },
+    "notification" : {
+        "application_received": {
+            "title": "Nouvelle demande de location",
+            "message": "{{user}} a envoyé une demande pour votre bien."
+        },
+        "application_cancelled_by_candidate": {
+            "title": "Demande annulée",
+            "message": "{{user}} a annulé sa demande pour votre bien."
+        },
+        "application_cancelled": {
+            "title": "Demande annulée",
+            "message": "Vous avez annulé votre demande de location."
+        },
+        "application_rejected": {
+            "title": "Demande refusée",
+            "message": "{{user}} a refusé votre demande de location."
+        },
+        "application_accepted": {
+            "title": "Demande acceptée",
+            "message": "{{user}} a accepté votre demande de location pour ce bien."
+        },
+        "application_updated": {
+            "title": "Demande modifiée",
+            "message": "{{user}} a modifié sa demande de location."
+        }
+    }
+    
+}
