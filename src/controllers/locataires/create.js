@@ -12,13 +12,12 @@ const { validatorEmail, validatorPhoneNumber } = require("../../utils/validator/
 // function de creation du token en suite du cookie
 const setCookieSession = (res, sessionId) => {
     const token  = generateTokenSession(sessionId)
-    const signed = process.env.COOKIE_SECURE !== "false"
     res.cookie("token", token, {
         httpOnly: true,
-        secure:   signed,
-        sameSite: signed ? "none" : "Lax",
-        path:     "/",
-        signed,
+        secure:   true,
+        sameSite: "lax",
+        path: "/",
+        signed: true,
         maxAge:   365 * 24 * 3600000,
     })
 }
