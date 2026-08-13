@@ -24,6 +24,7 @@ const setCookieSession = (res,sessionId) =>{
         secure: signed,
         sameSite:signed ? "none" : "Lax",
         path: "/",
+        signed,
         maxAge: 365 * 24 * 3600000,
     })
 }
