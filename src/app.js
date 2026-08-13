@@ -81,6 +81,12 @@ app.use(hpp({
 
 // laissaon des routes a l'application 
 app.use("/api",sanitizeBody,router)
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "ImoFast API is running"
+  });
+});
 
 // ============================== EN production ==========================
 // const csrfProtection = csrf({ cookie: { httpOnly: true, secure: true } })
