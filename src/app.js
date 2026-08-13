@@ -12,7 +12,7 @@ const { convertirEnFCFA } = require("./utils/devise")
 
 
 const app = express()
-
+app.set("trust proxy", 1)
 
 
 //securation avec helmet

@@ -18,13 +18,12 @@ const ROLES_AUTORISES = ["bailleur", "locataire"]
 
 const setCookieSession = (res,sessionId) =>{
     const token = generateTokenSession(sessionId)
-    const signed =  process.env.COOKIE_SECURE !== "false"
     res.cookie("token",token,{
         httpOnly: true,
-        secure: signed,
-        sameSite:signed ? "none" : "Lax",
+        secure: true,
+        sameSite: "none",
         path: "/",
-        signed,
+        signed: true,
         maxAge: 365 * 24 * 3600000,
     })
 }

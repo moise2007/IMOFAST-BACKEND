@@ -45,6 +45,7 @@ const createAuthMiddleware  = (role=[])=>async(req,res,next)=>{
   try{
     //recuperation du cookie
     const token = getToken(req)
+    console.log(token)
     if(!token){
       return clearAndRespond(401,RESPONSES.tokenManquant)
     }
@@ -153,6 +154,7 @@ const createAuthMiddleware  = (role=[])=>async(req,res,next)=>{
       userData.forfait.fin = null
     }
 
+    console.log(userData)
     //injestion dans la requette
     req.user = userData
     req.sessionId = sessionId
