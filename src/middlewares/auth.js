@@ -29,7 +29,8 @@ const ROLES_CONNUS = ["bailleur", "locataire"]
 
 //lecture du token 
 const getToken = (req) => {
-    return req.signedCookies?.token ?? null
+  console.log(req.signedCookies)
+    return req.signedCookies?.token ?? req.cookies?.token
 }
 
 
