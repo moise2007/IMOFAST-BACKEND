@@ -37,7 +37,6 @@ app.use(cors({
                 /^http:\/\/127\.0\.0\.1(:\d+)?$/,
                 /^http:\/\/172\.\d{1,3}\.\d{1,3}\.\d{1,3}(:\d+)?$/,
                 /^http:\/\/192\.168\.\d{1,3}\.\d{1,3}(:\d+)?$/,
-                "https://imofast-frontend.vercel.app/"
             ]
             if (!origin || allowed.includes(origin) || localPatterns.some(p => p.test(origin))) {
                 callback(null, true)

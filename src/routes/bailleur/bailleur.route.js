@@ -11,6 +11,7 @@ const { routerPasswordForgetBailleur } = require("./bailleur.passwordForget.rout
 const { CalculBailleur } = require("../../services/calculBailleur")
 const { getdataAcceuil } = require("../../controllers/bailleurs/getDataAcceuil")
 const { verifieEmailBailleur } = require("../../controllers/bailleurs/verifieEmail")
+const { getProfilBailleur } = require("../../controllers/bailleurs/getProfil")
 
 // creation du router 
 const routerBailleur = express.Router()
@@ -38,7 +39,7 @@ routerBailleur.patch("/update/email",authBailleur, updateEmailBailleur)
 routerBailleur.post("/otp/verifier/email",verifieEmailBailleur)
 
 // route de recuperation des donnes locataires
-// routerBailleur.get("/profil/:id",getProfilLocataire)
+routerBailleur.get("/profil/:id",getProfilBailleur)
 
 
 // update password quand il est authtifier

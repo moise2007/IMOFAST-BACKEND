@@ -29,7 +29,7 @@ const detailAnnonce = async(req,res)=>{
 
         // verification si favoris
         let favoris = {idPublic:null}
-        if(req.role && req.role != "bailleur"){
+        if(req.role && req.role != "bailleur" && req.role == "locataire"){
             const snapShotFavoris = await db.collection("favoris")
             .where(Filter.and(
                 Filter.where("annonceId","==",annonce.idPublic),
