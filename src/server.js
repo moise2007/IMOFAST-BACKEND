@@ -9,6 +9,7 @@ const { convertirEnFCFA } = require("./utils/devise")
 const { Users } = require("./services/auto/usersGetting")
 const { demarrerAutoAnnonce } = require("./services/auto/authAnnonce")
 const { initSocket } = require("./config/socket.io")
+const { verifyMailTransport } = require("./config/mail.config");
 
 const port = process.env.PORT || 3000
 
@@ -55,12 +56,12 @@ async function startServer(){
             console.log(`API contact : POST http://172.20.10.3:${port}/api/contact`);
 
             if (process.env.MAIL_USER) {
-                const { verifyMailTransport } = require("./config/mail.config");
+                
                 verifyMailTransport()
                     .then(() => console.log("✓ Configuration SMTP vérifiée"))
-                    .catch((err) => console.warn("⚠ SMTP non configuré:", err.message));
+                    .catch((err) => console.warn(" SMTP non configuré:", err.message));
             } else {
-                console.warn("⚠ MAIL_USER absent — le formulaire contact ne pourra pas envoyer d'emails");
+                console.warn(" MAIL_USER absent — le formulaire contact ne pourra pas envoyer d'emails");
             }
         });
 

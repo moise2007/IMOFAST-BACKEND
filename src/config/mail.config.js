@@ -1,11 +1,11 @@
 const nodemailer = require("nodemailer");
 
-const CONTACT_RECIPIENT = process.env.CONTACT_RECIPIENT || "bakomenm@gmail.com";
+const CONTACT_RECIPIENT = process.env.CONTACT_RECIPIENT || "contact@imofast.org";
 
 function getMailConfig() {
   const user = process.env.MAIL_USER?.trim();
   const pass = process.env.MAIL_PASS?.trim();
-  const host = process.env.MAIL_HOST?.trim() || "smtp.gmail.com";
+  const host = process.env.MAIL_HOST?.trim();
   const port = Number(process.env.MAIL_PORT) || 587;
 
   if (!user || !pass) {
@@ -19,10 +19,7 @@ function getMailConfig() {
 
 function createMailTransport() {
   const { user, pass, host, port } = getMailConfig();
-  const rejectUnauthorized =
-    process.env.MAIL_TLS_REJECT_UNAUTHORIZED === "true" ||
-    (process.env.NODE_ENV === "production" &&
-      process.env.MAIL_TLS_REJECT_UNAUTHORIZED !== "false");
+  const rejectUnauthorized =process.env.MAIL_TLS_REJECT_UNAUTHORIZED !== "false" 
 
   return nodemailer.createTransport({
     host,
