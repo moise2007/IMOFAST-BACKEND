@@ -111,10 +111,13 @@ function initSocket(io){
 
     io.use(async(socket,next)=>{
         // recuperation du cookie
+        console.log("ok")
         const cookies = socket.handshake.headers.cookie
         if (!cookies) {
+            console.log("cookies: "+cookies)
             return next(new Error("Non authentifié"));
         }
+        console.log({cookies})
         const token = cookies.split("=")[1]
         // decode le cookie recu
         let decoded
@@ -124,18 +127,21 @@ function initSocket(io){
         catch{
             return next(new Error("Non authentifié"));
         }
+        console.log({decoded})
         
         //verification de la presence de l'id de la session dans le cookie
         const sessionId = decoded?.idsession
         if(!sessionId){
             return next(new Error("Non authentifié"));
         }
+        console.log({sessionId})
 
         //verification de l'existence de la session
         const sessionDoc = await db.collection("session").doc(sessionId).get()
         if (!sessionDoc.exists) {
             return next(new Error("Non authentifié"));
         }
+        console.log({sessionDoc})
 
         //verification de expiration
         const {expireAt} = sessionDoc.data()
@@ -179,6 +185,7 @@ function initSocket(io){
     // ================= SOCKET =================
     io.on("connection",(socket)=>{
         const userId = socket.user.idPublic;
+        console.log(userId)
         socket.join(userId);
 
         //recuperation des utilisateurs
