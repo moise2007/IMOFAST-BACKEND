@@ -20,11 +20,12 @@ const setCookieSession = (res,sessionId) =>{
     const token = generateTokenSession(sessionId)
     res.cookie("token",token,{
         httpOnly: true,
-        secure: true,
-        sameSite: "none",
+        secure:   true,
+        sameSite: "lax",
         path: "/",
+        domain: ".imofast.org",
         signed: true,
-        maxAge: 365 * 24 * 3600000,
+        maxAge:   365 * 24 * 3600000,
     })
 }
 

@@ -17,6 +17,7 @@ const setCookieSession = (res, sessionId) => {
         secure:   true,
         sameSite: "lax",
         path: "/",
+        domain: ".imofast.org",
         signed: true,
         maxAge:   365 * 24 * 3600000,
     })
