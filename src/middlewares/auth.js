@@ -152,7 +152,6 @@ const createAuthMiddleware  = (role=[])=>async(req,res,next)=>{
       userData.forfait.fin = null
     }
 
-    console.log(userData)
     //injestion dans la requette
     req.user = userData
     req.sessionId = sessionId
