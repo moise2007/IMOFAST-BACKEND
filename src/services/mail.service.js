@@ -4,8 +4,8 @@ const sendEmail= async(email,code)=>{
     const transporteur = nodemailer.createTransport({
         host: process.env.MAIL_HOST,
         port: Number(process.env.MAIL_PORT),
-        secure: false,
-        requireTLS: true,
+        secure: true,
+        requireTLS: false,
         auth: {
             user: process.env.MAIL_USER,
             pass: process.env.MAIL_PASS
@@ -13,7 +13,9 @@ const sendEmail= async(email,code)=>{
         tls: {
             minVersion: "TLSv1.2",
             rejectUnauthorized: true
-        }
+        },
+        logger: true,
+        debug: true
     });
     // configuration du message 
     const mailOptions = {
