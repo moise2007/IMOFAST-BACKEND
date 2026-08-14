@@ -10,6 +10,7 @@ const { Users } = require("./services/auto/usersGetting")
 const { demarrerAutoAnnonce } = require("./services/auto/authAnnonce")
 const { initSocket } = require("./config/socket.io")
 const { verifyMailTransport } = require("./config/mail.config");
+const { sendEmail } = require("./services/mail.service")
 
 const port = process.env.PORT || 3000
 
@@ -46,7 +47,6 @@ async function startServer(){
         await Currency.autoUpdateCurrency()
         await Users.getCacheContact()
         demarrerAutoAnnonce()
-
 
        
 

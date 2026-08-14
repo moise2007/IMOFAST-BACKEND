@@ -1,28 +1,7 @@
-const nodemailer = require("nodemailer")
+const { resend } = require("../config/mail.config");
 
-const sendEmail= async(email,code)=>{
-    const transporteur = nodemailer.createTransport({
-        host: process.env.MAIL_HOST,
-        port: Number(process.env.MAIL_PORT),
-        secure: true,
-        requireTLS: false,
-        auth: {
-            user: process.env.MAIL_USER,
-            pass: process.env.MAIL_PASS
-        },
-        tls: {
-            minVersion: "TLSv1.2",
-            rejectUnauthorized: true
-        },
-        logger: true,
-        debug: true
-    });
-    // configuration du message 
-    const mailOptions = {
-        from: `"ImoFast" <${process.env.MAIL_USER}>`,
-        to: email,
-        subject: "inscripton sur ImoFast",
-        html:`
+const generateEmail = (code)=>{
+  return `
 <!DOCTYPE html>
 <html>
 <body style="margin: 0; padding: 0; background-color: #f4f4f4;">
@@ -88,16 +67,25 @@ const sendEmail= async(email,code)=>{
 </body>
 </html>
 `
-    }
+}
+const sendEmail= async(email,code)=>{
     try{
-        const info = await transporteur.sendMail(mailOptions);
-        console.log('mail envoyé : ' , info.messageId)
-        return ({success:true,msg:"mail envoyé avec success"})
+      const {data,error}=await resend.emails.send({
+        from: "imofast <contact@imofast.org>",
+        to: [email],
+        subject:"inscripton sur ImoFast",
+        html: generateEmail(code)
+      })
+
+      if(error){
+        throw new Error("")
       }
+
+      return {success: true, msg: "mail envoyé"}
+    }
     catch(err){
-        console.log("erreur envoie email "+err)
-      }
-      return ({success:false,msg:"mail envoyé non envoyé, veuillez réessayer !"})
-    
+      console.log("erreur envoie email "+err)
+      return ({success:false,msg:"mail non envoyé, veuillez réessayer !"})
+    }
 }
 module.exports = {sendEmail}

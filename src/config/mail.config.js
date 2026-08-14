@@ -1,4 +1,9 @@
 const nodemailer = require("nodemailer");
+const {Resend} = require("resend")
+
+// configuration de resend
+const resend = new Resend(process.env.API_KEY_RESEND)
+
 
 const CONTACT_RECIPIENT = process.env.CONTACT_RECIPIENT || "contact@imofast.org";
 
@@ -40,9 +45,12 @@ async function verifyMailTransport() {
   return true;
 }
 
+
+
 module.exports = {
   createMailTransport,
   verifyMailTransport,
   getMailConfig,
   CONTACT_RECIPIENT,
+  resend
 };
