@@ -26,7 +26,7 @@ const io = new Server(server,{
     cors : {
         origin: function(origin, callback) {
             const allowed = process.env.ALLOWED_ORIGINS?.split(",") ?? []
-            if (!origin || allowed.includes(origin)) {
+            if (allowed.includes(origin)) {
                 callback(null, true)
             } else {
                 callback(new Error(`Origine non autorisée : ${origin}`))
@@ -54,6 +54,10 @@ async function startServer(){
     }
 }
 startServer()
+
+server.listen(port, '0.0.0.0', () => {
+    console.log(`Serveur démarré sur le port ${port}`)
+})
 
 /// reglagle du crash propre
 server.on("error",(error)=>{
