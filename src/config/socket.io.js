@@ -114,17 +114,18 @@ function initSocket(io){
         console.log("ok")
         const cookies = socket.handshake.headers.cookie
         if (!cookies) {
-            console.log("cookies: "+cookies)
             return next(new Error("Non authentifié"));
         }
-        console.log({cookies})
         const token = cookies.split("=")[1]
+        console.log({token})
         // decode le cookie recu
         let decoded
         try{
             decoded = jwt.verify(token, process.env.JWT_SECRET)
+            console.log({decoded})
         }
-        catch{
+        catch(err){
+            console.log({err})
             return next(new Error("Non authentifié"));
         }
         console.log({decoded})
