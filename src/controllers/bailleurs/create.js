@@ -26,11 +26,12 @@ const compteNonVerifie = (path) => ({
 // function de creation du token en suite du cookie
 const setCookieSession = (res, sessionId) => {
     const token  = generateTokenSession(sessionId)
-    const signed = process.env.COOKIE_SECURE !== "false"
+    const isProd = process.env.ETAT === "production"
     res.cookie("token", token, {
         httpOnly: true,
-        secure:   signed,
-        sameSite: signed ? "none" : "Lax",
+        domain: isProd ? ".imofast.org" : undefined,
+        secure:   isProd,
+        sameSite: isProd ? "none" : "lax",
         signed,
         path:     "/",
         maxAge:   365 * 24 * 3600000,

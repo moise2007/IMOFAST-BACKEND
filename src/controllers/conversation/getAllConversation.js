@@ -45,10 +45,10 @@ const getAllConversation = async (req,res)=>{
             return {
                 ...doc,
                 autreParticipant:{
-                    nom: user.nom,
-                    prenom: user.prenom,
-                    photoProfil: user.photoProfil,
-                    enligne: user.enligne
+                    nom: user?.nom,
+                    prenom: user?.prenom,
+                    photoProfil: user?.photoProfil,
+                    enligne: user?.enligne
                 }
             }
         })

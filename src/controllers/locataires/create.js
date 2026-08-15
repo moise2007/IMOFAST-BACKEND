@@ -12,14 +12,15 @@ const { validatorEmail, validatorPhoneNumber } = require("../../utils/validator/
 // function de creation du token en suite du cookie
 const setCookieSession = (res, sessionId) => {
     const token  = generateTokenSession(sessionId)
+    const isProd = process.env.ETAT === "production"
     res.cookie("token", token, {
         httpOnly: true,
-        secure:   true,
-        sameSite: "lax",
+        secure:   isProd,
+        sameSite: isProd ? "nonde" :"lax",
         path: "/",
-        domain: ".imofast.org",
+        domain: isProd ?".imofast.org": undefined,
         signed: true,
-        maxAge:   365 * 24 * 3600000,
+        maxAge: 365 * 24 * 3600000,
     })
 }
 

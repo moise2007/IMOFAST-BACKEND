@@ -4,6 +4,8 @@ const { db, admin } = require("./firebase");
 const { Message } = require("../models/message");
 const { Users } = require("../services/auto/usersGetting");
 const {Filter} = admin.firestore
+const cookie = require("cookie")
+const cookieParser = require("cookie-parser")
 
 
 
@@ -111,24 +113,23 @@ function initSocket(io){
 
     io.use(async(socket,next)=>{
         // recuperation du cookie
-        console.log("ok")
         const cookies = socket.handshake.headers.cookie
         if (!cookies) {
             return next(new Error("Non authentifié"));
         }
-        const token = cookies.split("=")[1]
-        console.log({token})
+
+        const parsed = cookie.parse(cookies)
+        const cookiesSigned = parsed?.token
+        const token = cookieParser.signedCookie(cookiesSigned,process.env.COOKIE_SECRET)
         // decode le cookie recu
         let decoded
         try{
             decoded = jwt.verify(token, process.env.JWT_SECRET)
-            console.log({decoded})
         }
         catch(err){
             console.log({err})
             return next(new Error("Non authentifié"));
         }
-        console.log({decoded})
         
         //verification de la presence de l'id de la session dans le cookie
         const sessionId = decoded?.idsession
