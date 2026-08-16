@@ -12,7 +12,6 @@ const i18nextMiddleware= require("./middlewares/i18next.middleware")
 const app = express()
 app.set("trust proxy", 1)
 
-
 //securation avec helmet
 app.use(helmet({
     contentSecurityPolicy: {

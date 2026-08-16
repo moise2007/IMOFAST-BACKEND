@@ -136,14 +136,12 @@ function initSocket(io){
         if(!sessionId){
             return next(new Error("Non authentifié"));
         }
-        console.log({sessionId})
 
         //verification de l'existence de la session
         const sessionDoc = await db.collection("session").doc(sessionId).get()
         if (!sessionDoc.exists) {
             return next(new Error("Non authentifié"));
         }
-        console.log({sessionDoc})
 
         //verification de expiration
         const {expireAt} = sessionDoc.data()
