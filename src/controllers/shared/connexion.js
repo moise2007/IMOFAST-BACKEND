@@ -102,7 +102,6 @@ const connexion = async(req, res) => {
 
         // recuperatio du token ou l'email et du mot de passe
         let { nom="",prenom=null, password=null, email="",photoProfil=null, telephone = null, tokenGoogle= null } = req.body
-        console.log(req.body)
 
         //role de connexion
         const role = req.params.role
@@ -129,6 +128,7 @@ const connexion = async(req, res) => {
                     msg: 'Token Google inValide'
                 })
             }
+            console.log(uGoogle)
             email = uGoogle.email ?? email
         }
         
@@ -158,7 +158,7 @@ const connexion = async(req, res) => {
 
                 try{
                     //en cas authentification par google alors on creer le compte
-                    await createCompteGoogle(role,{
+                    const data= await createCompteGoogle(role,{
                         nom,prenom,email,telephone,photoProfil,idTokenGoogle: tokenGoogle,hasId: true
                     })
                     // Le cookie a été posé par la route /create

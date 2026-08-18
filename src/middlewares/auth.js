@@ -95,6 +95,7 @@ const createAuthMiddleware  = (role=[])=>async(req,res,next)=>{
     if(!userDoc.exists){
       return clearAndRespond(401,RESPONSES.userIntrouvable)
     }
+    console.log(userDoc.data())
     
     const userData = {id:userDoc.id,...userDoc.data()}
     if(!(userData.verification?.emailVerifie || userData.verification?.telephoneVerifie)){

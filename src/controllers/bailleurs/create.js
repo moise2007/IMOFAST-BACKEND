@@ -32,7 +32,7 @@ const setCookieSession = (res, sessionId) => {
         domain: isProd ? ".imofast.org" : undefined,
         secure:   isProd,
         sameSite: isProd ? "none" : "lax",
-        signed,
+        signed: true,
         path:     "/",
         maxAge:   365 * 24 * 3600000,
     })

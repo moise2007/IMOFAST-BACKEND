@@ -56,6 +56,7 @@ routerBailleur.get("/getData",authBailleur,async(req,res)=>{
     try{
         const {id,...user} = req.user
         const result = await CalculBailleur(user)
+        console.log(result)
         return res.status(200).json({
             success:result.success,
             msg: "données chargées avec succès",

@@ -13,7 +13,6 @@ const { validatorEmail, validatorPhoneNumber } = require("../../utils/validator/
 const setCookieSession = (res, sessionId) => {
     const token  = generateTokenSession(sessionId)
     const isProd = process.env.ETAT != "developpement"
-    console.log(isProd)
     res.cookie("token", token, {
         httpOnly: true,
         secure:   isProd,
@@ -110,7 +109,7 @@ const createLocataire = async(req,res)=>{
    try{
 
         // recuperation des identifiants (idTokenGoogle, email, telephone)
-        let {email,telephone,password,idTokenGoogle,photoProfil=null,prederences=null,nom='',prenom=null} = req.body
+        let {email,telephone,password,idTokenGoogle,photoProfil=null} = req.body
 
         //verification du token google
         let uGoogle = null
@@ -161,7 +160,6 @@ const createLocataire = async(req,res)=>{
                 )
             )
             const snapEmail = await findLocataireVerifie(filterEmail)
-            console.log("ok")
             if(!snapEmail.empty){
                 return res.status(409).json({
                     success: false,

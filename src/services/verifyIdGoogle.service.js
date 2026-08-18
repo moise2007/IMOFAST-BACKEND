@@ -37,7 +37,7 @@ async function verifyGoogleToken(idToken) {
     }
      
   } catch (error) {
-    console.log(error)
+    console.log({error})
     return null;
   }
 }
