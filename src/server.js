@@ -48,7 +48,6 @@ async function startServer(){
         await Currency.autoUpdateCurrency()
         await Users.getCacheContact()
         demarrerAutoAnnonce()
-        createMessage()
 
     }catch(err){
         console.error(err)
