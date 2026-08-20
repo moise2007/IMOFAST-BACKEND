@@ -59,7 +59,7 @@ class Locataire {
       password : this.password,
       verification: {
         emailVerifie: this.emailverifie,
-        telephoneVerifie: this.telephoneVerifie,
+        telephoneVerifie: !!this.telephone,
       },
       
 
