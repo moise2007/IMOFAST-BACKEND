@@ -55,7 +55,12 @@ app.use(i18nextMiddleware)
 app.use(cookieParser(process.env.COOKIE_SECRET))
 
 
-
+app.get("/",(req,res)=>{
+    return res.status(200).json({
+        success: true,
+        msg: "le serveur a demarer"
+    })
+})
 //securisation des params des router
 app.use(hpp({
     whitelist : ["type","ville","prix","localisation","quatier"],
