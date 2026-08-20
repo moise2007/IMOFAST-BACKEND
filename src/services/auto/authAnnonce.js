@@ -64,7 +64,7 @@ async function traiterToutesLesAnnonces({ tailleLot = 200, delai = 100 }) {
 
 function construireMiseAJour(doc) {
     const data = doc.data()
-    if (data.dateExpiration && new Date(data.dateExpiration) < new Date() && data.status === "publier") {
+    if (data?.dateExpiration && new Date(data?.dateExpiration) < new Date() && data?.status === "publier") {
         return { status: "expirer" }
     }
     return null
