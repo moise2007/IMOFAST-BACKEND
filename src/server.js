@@ -61,9 +61,7 @@ server.listen(port, '0.0.0.0', () => {
 
 /// reglagle du crash propre
 server.on("error",(error)=>{
-    console.log("error",(err)=>{
-        console.log("erreur serveur : ",err.message)
-    })
+    console.log("erreur serveur : ",error.message)
 })
 
 module.exports = {server,io}
