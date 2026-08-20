@@ -11,6 +11,7 @@ const { demarrerAutoAnnonce } = require("./services/auto/authAnnonce")
 const { initSocket } = require("./config/socket.io")
 const { verifyMailTransport } = require("./config/mail.config");
 const { sendEmail } = require("./services/mail.service")
+const { createMessage } = require("./config/twilio")
 
 const port = process.env.PORT || 3000
 
@@ -47,8 +48,8 @@ async function startServer(){
         await Currency.autoUpdateCurrency()
         await Users.getCacheContact()
         demarrerAutoAnnonce()
+        createMessage()
 
-       
     }catch(err){
         console.error(err)
     }

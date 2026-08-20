@@ -63,7 +63,7 @@ class Bailleur{
 
             verification: {
                 emailVerifie : this.emailVerifie,
-                telephoneVerifie : false,
+                telephoneVerifie : !!this.telephone,
                 cniVerifie: false,
                 cniVerifieAt: null,
                 estDigne: false,
