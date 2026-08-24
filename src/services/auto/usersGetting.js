@@ -5,26 +5,34 @@ class Users {
     static COMPTE_CACHE = {
         bailleur: null,
         admin: null,
-        locataire: null
+        locataire: null,
+        annonce: null,
+        bien: null
     }
     static SIZE = {
         bailleur: null,
         locataire: null,
         admin: null,
+        annonce: null,
+        bien: null
     }
     static dernierChargement = 0
     static DUREE_CACHE = 10*60*1000
 
     static async compterUser(){
         try{
-            const [locataireSize,bailleurSize,adminSize] = await Promise.all([
+            const [locataireSize,bailleurSize,adminSize,annonceSize,bienSize] = await Promise.all([
                 db.collection("locataire").count().get(),
                 db.collection("bailleur").count().get(),
-                db.collection("admin").count().get()
+                db.collection("admin").count().get(),
+                db.collection("annonce").count().get(),
+                db.collection("bien").count().get()
             ])
             Users.SIZE.locataire = locataireSize.data().count
             Users.SIZE.bailleur = bailleurSize.data().count
             Users.SIZE.admin = adminSize.data().count
+            Users.SIZE.annonce = annonceSize.data().count
+            Users.SIZE.bien = bienSize.data().count
             return true
         }
         catch(err){
@@ -57,37 +65,74 @@ class Users {
         }
         return allUsers
     }
-    static async getCacheContact(){
-        try{
-            const maintenant = new Date()
+    static async getCacheContact() {
+        try {
+            const now = Date.now();
 
-            if(maintenant && (maintenant - Users.dernierChargement) < Users.DUREE_CACHE 
-                && COMPTE_CACHE.admin && COMPTE_CACHE.bailleur && COMPTE_CACHE.locataire){
-                return COMPTE_CACHE
-            }
-            const successGetting = await Users.compterUser()
-            if(!successGetting){
-                throw new Error("")
+            // Cache valide
+            if (
+                Users.dernierChargement &&
+                now - Users.dernierChargement < Users.DUREE_CACHE &&
+                Users.COMPTE_CACHE?.locataire &&
+                Users.COMPTE_CACHE?.bailleur &&
+                Users.COMPTE_CACHE?.admin &&
+                Users.COMPTE_CACHE?.annonce &&
+                Users.COMPTE_CACHE?.bien
+            ) {
+                return Users.COMPTE_CACHE;
             }
 
-            const [locataires,bailleurs, admin] = await Promise.all([
-                Users.getUser(Users.SIZE.locataire,"locataire"),
-                Users.getUser(Users.SIZE.bailleur,"bailleur"),
-                Users.getUser(Users.SIZE.admin,"admin")
-            ])
-            Users.COMPTE_CACHE.admin = admin
-            Users.COMPTE_CACHE.locataire = locataires
-            Users.COMPTE_CACHE.bailleur = bailleurs
-            Users.DUREE_CACHE = Math.max(
-                10*60*1000,  
-                (Users.SIZE.locataire + Users.SIZE.bailleur + Users.SIZE.admin)*20
-            )
-            Users.dernierChargement = new Date()
-            console.log("users bien initialiser")
-        }
-        catch(err){
-            console.log("error gettinng user : ",err)
-            Users.DUREE_CACHE = 10*1000
+            // Mise à jour des compteurs
+            if (!(await Users.compterUser())) {
+                throw new Error("Impossible de compter les utilisateurs");
+            }
+
+            // Récupération parallèle des dernières données
+            const [
+                locataires,
+                bailleurs,
+                admins,
+                annonces,
+                biens
+            ] = await Promise.all([
+                Users.getUser(10, "locataire"),
+                Users.getUser(10, "bailleur"),
+                Users.getUser(10, "admin"),
+                Users.getUser(10, "annonce"),
+                Users.getUser(10, "bien")
+            ]);
+
+            // Mise en cache
+            Users.COMPTE_CACHE = {
+                locataire: locataires,
+                bailleur: bailleurs,
+                admin: admins,
+                annonce: annonces,
+                bien: biens,
+
+                // KPI
+                totalLocataires: Users.SIZE.locataire,
+                totalBailleurs: Users.SIZE.bailleur,
+                totalAdmins: Users.SIZE.admin,
+                totalUtilisateurs:
+                    Users.SIZE.locataire +
+                    Users.SIZE.bailleur +
+                    Users.SIZE.admin,
+
+                totalAnnonces: Users.SIZE.annonce ?? 0,
+                totalBiens: Users.SIZE.bien ?? 0
+            };
+
+            Users.dernierChargement = now;
+            Users.DUREE_CACHE = 10 * 60 * 1000;
+            console.log("users initialiser")
+
+            return Users.COMPTE_CACHE;
+
+        } catch (error) {
+            console.error("Erreur getCacheContact :", error);
+            Users.DUREE_CACHE = 10 * 1000;
+            throw error;
         }
     }
 }

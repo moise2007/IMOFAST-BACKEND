@@ -107,7 +107,7 @@ const envoyerCodeOTP = async (email, telephone) => {
 
 const createLocataire = async(req,res)=>{
    try{
-
+        console.log(req.body)
         // recuperation des identifiants (idTokenGoogle, email, telephone)
         let {email,telephone,password,idTokenGoogle,photoProfil=null} = req.body
 

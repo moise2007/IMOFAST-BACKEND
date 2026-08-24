@@ -30,6 +30,8 @@ const { limitGlobal, limitAuth, limitUpload } = require("../middlewares/rateLimi
 const { routerAlerteur } = require("./alerteur.route")
 const { routerPaiement } = require("./paiement.route")
 const { routerServiceClient } = require("./serviceClient.route")
+const { routerAnalitic } = require("./analytic.route")
+const { routerAuthAdmin } = require("./admin/auth.route")
 
 
 const router = express.Router()
@@ -41,7 +43,7 @@ router.post("/connexion/:role",limitAuth,connexion)
 router.use("/otp",limitAuth,routerOTP)
 router.post("/identifiantexiste/:role",limitAuth,identifiantExiste)
 router.use("/location",limitGlobal,RouterLocation)
-
+router.use("/analitic",limitGlobal,routerAnalitic)
 router.use("/agenda",limitGlobal,routerAgenda)
 router.use("/annonce",limitGlobal,routerAnnonce)
 router.use("/bien",limitGlobal,routerBien)

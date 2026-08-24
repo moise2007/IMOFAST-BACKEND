@@ -3,15 +3,11 @@ const http = require("http")
 const {Server} = require("socket.io")
 
 const { app } = require("./app")
-const { handle } = require("i18next-http-middleware/cjs")
 const { Currency } = require("./services/auto/monnaie.auto")
-const { convertirEnFCFA } = require("./utils/devise")
 const { Users } = require("./services/auto/usersGetting")
 const { demarrerAutoAnnonce } = require("./services/auto/authAnnonce")
 const { initSocket } = require("./config/socket.io")
-const { verifyMailTransport } = require("./config/mail.config");
 const { sendEmail } = require("./services/mail.service")
-const { createMessage } = require("./config/twilio")
 
 const port = process.env.PORT || 3000
 
@@ -48,7 +44,6 @@ async function startServer(){
         await Currency.autoUpdateCurrency()
         await Users.getCacheContact()
         demarrerAutoAnnonce()
-
     }catch(err){
         console.error(err)
     }

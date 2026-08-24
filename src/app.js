@@ -55,13 +55,7 @@ app.use(i18nextMiddleware)
 app.use(cookieParser(process.env.COOKIE_SECRET))
 
 
-app.get("/",(req,res)=>{
-    console.log("ok papa")
-    return res.status(200).json({
-        success: true,
-        msg: "le serveur a demarer"
-    })
-})
+
 //securisation des params des router
 app.use(hpp({
     whitelist : ["type","ville","prix","localisation","quatier"],
@@ -90,6 +84,13 @@ app.get("/health", (req, res) => {
     message: "ImoFast API is running"
   });
 });
+app.post("/",(req,res)=>{
+    console.log(req.body)
+    res.status(200).json({
+        success: true,
+        msg: "flutter fonctionne bien"
+    })
+})
 
 // ============================== EN production ==========================
 // const csrfProtection = csrf({ cookie: { httpOnly: true, secure: true } })

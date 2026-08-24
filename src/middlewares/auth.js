@@ -92,12 +92,38 @@ const createAuthMiddleware  = (role=[])=>async(req,res,next)=>{
         break
       }
     }
+    
     if(!userDoc.exists){
       return clearAndRespond(401,RESPONSES.userIntrouvable)
     }
-    console.log(userDoc.data())
     
     const userData = {id:userDoc.id,...userDoc.data()}
+
+    if (req.role === "admin") {
+      if (userData.verified !== true) {
+        return res.status(403).json({
+          success: false,
+          fetchApi: false,
+          msg: "Veuillez vérifier votre compte administrateur avant de continuer"
+        })
+      }
+ 
+      if (userData.active !== true) {
+        res.clearCookie("token", { path: "/" })
+        return res.status(203).json({
+          success: false,
+          suspendu: true,
+          user: null,
+          msg: "Votre compte administrateur est désactivé"
+        })
+      }
+ 
+      req.user = userData
+      req.sessionId = sessionId
+      return next()
+    }
+
+    
     if(!(userData.verification?.emailVerifie || userData.verification?.telephoneVerifie)){
       return res.status(403).json({
         success: false,
