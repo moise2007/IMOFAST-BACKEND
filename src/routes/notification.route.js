@@ -5,11 +5,39 @@ const { setAllLuNotification } = require("../controllers/notifications/setAllLuN
 const { deleteNotification } = require("../controllers/notifications/deleteNotification")
 const { getNotification } = require("../controllers/notifications/getAllNotifications")
 const { createNotification } = require("../controllers/notifications/createNotification")
+const { db } = require("../config/firebase")
 
 //creation du router
 const routerNotification = express.Router()
 
+routerNotification.post("/subcribe",authBailleurLocataireAdmin,async(req,res)=>{
+    try{
+        const subscription = req.body
 
+        if (!subscription) {
+            return res.status(400).json({
+                success: false,
+                message: "notif-error",
+            });
+        }
+
+        await db.collection(req.role).doc(req.user.id).update({
+            notificationData: subscription
+        })
+
+        return res.status(200).json({
+            success: true,
+            msg: "notif-activer"
+        })
+    }
+    catch(err){
+        console.log(err)
+        return res.status(500).json({
+            success: false,
+            msg: "notif-error"
+        })
+    }
+})
 /**
  * route de creation des notifications
  * params : 
@@ -50,5 +78,6 @@ routerNotification.patch("/set-as-all-read",authBailleurLocataireAdmin,setAllLuN
 */
 
 routerNotification.patch("/set-as-read/:id",authBailleurLocataireAdmin,setLuNotification)
+
 
 module.exports = {routerNotification}

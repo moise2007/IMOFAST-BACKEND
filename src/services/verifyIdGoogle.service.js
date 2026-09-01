@@ -1,44 +1,51 @@
-const { auth } = require("../config/firebase");
-const {OAuth2Client} =require("google-auth-library")
-const CLIENT_ID=process.env.CLIENT_ID_GOOGLE_OAUTH2
-const client = new OAuth2Client(CLIENT_ID)
+const { OAuth2Client } = require("google-auth-library");
 
-/**
- * @typedef {Object} userData
- * @property {String} nom
- * @property {Boolean} emailVerifie
- * @property {String} email
- * @property {String} photo de profil
- * @property {String} phoneNumber
- * @property {String} uidGoogle
- */
-
-/**
- * permet de verifier si l'utilisateur existe et de retourner l'objet ou null
- * @param {String} idToken 
- * @returns {userData} l'object des donnees de l'utilisateur
- */
-
+const CLIENT_ID = process.env.CLIENT_ID_GOOGLE_OAUTH2;
+const client = new OAuth2Client(CLIENT_ID);
 
 async function verifyGoogleToken(idToken) {
   try {
-    //recuperation du code
-    const ticket = await client.verifyIdToken({idToken,audience :  CLIENT_ID})
-    const userData = ticket.getPayload()
-    if(userData){
-      const user = {
-        uidGoogle : userData.sub,
-        email : userData.email || "",
-        emailVerifie : true,
-      }
-      return user;
-    }else{
-      throw new Error("erreur de veririfation")
+    if (!idToken) {
+      return {
+        success: false,
+        message: "Le token Google est requis.",
+      };
     }
-     
+
+    const ticket = await client.verifyIdToken({
+      idToken,
+      audience: CLIENT_ID,
+    });
+
+    const userData = ticket.getPayload();
+
+    if (!userData) {
+      return {
+        success: false,
+        message: "Impossible de récupérer les informations Google.",
+      };
+    }
+
+    return {
+      success: true,
+      user: {
+        uidGoogle: userData.sub,
+        email: userData.email || "",
+        emailVerifie: userData.email_verified === true,
+        nom: userData.name || "",
+        prenom: userData.given_name || "",
+        photoProfil: userData.picture || "",
+        telephone: userData.phone_number || ""
+      },
+    };
   } catch (error) {
-    console.log({error})
-    return null;
+    console.error("Erreur vérification Google :", error);
+
+    return {
+      success: false,
+      message: "Le token Google est invalide ou expiré.",
+    };
   }
 }
-module.exports = { verifyGoogleToken }
+
+module.exports = { verifyGoogleToken };

@@ -68,19 +68,29 @@ const generateEmail = (code)=>{
 </html>
 `
 }
-const sendEmail= async(email,code)=>{
+
+
+const sendEmail= async(email,code=null,html=null, title=null)=>{
     try{
+
+      // generation de du contenu de l'email
+      const content = html ? html : generateEmail(code)
+      const subject = title ? tile : "inscripton sur ImoFast"
+
+      // envoie de l'email
       const {data,error}=await resend.emails.send({
         from: "imofast <contact@imofast.org>",
         to: [email],
-        subject:"inscripton sur ImoFast",
-        html: generateEmail(code)
+        subject: subject,
+        html: content
       })
 
+      // verification d'une erreur
       if(error){
         throw new Error("")
       }
-
+      
+      // confirmation de l'envoie
       return {success: true, msg: "mail envoyé"}
     }
     catch(err){
@@ -88,4 +98,5 @@ const sendEmail= async(email,code)=>{
       return ({success:false,msg:"mail non envoyé, veuillez réessayer !"})
     }
 }
+
 module.exports = {sendEmail}

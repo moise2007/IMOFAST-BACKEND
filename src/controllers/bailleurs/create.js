@@ -74,11 +74,6 @@ const createBailleur = async(req,res)=>{
         //traitement avec les uid 
         if(idTokenGoogle){
             uGoogle = await verifyGoogleToken(idTokenGoogle)
-            // BUG corrigé : avant, ce bloc était dans un "else if(uGoogle)" qui
-            // ne s'exécutait jamais (uGoogle valait encore undefined à ce stade).
-            // Résultat : en connexion Google, l'email vérifié du compte Google
-            // n'était jamais repris -> le champ "email" restait celui (souvent
-            // vide) envoyé par le front.
             email = uGoogle?.email
             password = null
         }

@@ -7,9 +7,14 @@ class Bailleur{
         email,
         prenom,
         telephone,
+        sexe,
+        langue,
+        autreNumero,
+        devise,
         password,
         photoProfil,
         dateNaissance,
+        nomAgence,
         localisation,
         uidGoogle,
         cni,
@@ -19,9 +24,14 @@ class Bailleur{
         completudeProfilPourcentage,
     }){
         this.nom = nom 
+        this.nomAgence = nomAgence
         this.typeProfil = typeProfil
         this.prenom = prenom ?? ""
         this.email = email ?? ""
+        this.autreNumero = autreNumero ?? null
+        this.langue = langue ?? ""
+        this.devise = devise ?? ''
+        this.sexe = sexe ?? ""
         this.telephone = telephone ?? ""
         this.password = password ?? null
         this.photoProfil = photoProfil ?? null
@@ -39,7 +49,9 @@ class Bailleur{
         return{
             nom: this.nom,
             prenom: this.prenom,
+            nomAgence: this.nomAgence,
             telephone : this.telephone ??"",
+            autreNumero: this.autreNumero,
             email : this.email ?? "",
             typeProfil: this.typeProfil,
             password :  this.password,
@@ -94,6 +106,9 @@ class Bailleur{
                 type: "aucun", // "mensuel","trimestriel","annuel",aucun
                 fin: null,
             },
+            sexe: this.sexe,
+            devise : this.devise,
+            langue: this.langue,
             createAt: timestamp.now(),
             updateAt: timestamp.now(),
             lastConnexion: timestamp.now()

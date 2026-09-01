@@ -8,6 +8,8 @@ const { Users } = require("./services/auto/usersGetting")
 const { demarrerAutoAnnonce } = require("./services/auto/authAnnonce")
 const { initSocket } = require("./config/socket.io")
 const { sendEmail } = require("./services/mail.service")
+const { sendNotification } = require("./services/notification.service")
+const { db } = require("./config/firebase")
 
 const port = process.env.PORT || 3000
 
@@ -44,6 +46,13 @@ async function startServer(){
         await Currency.autoUpdateCurrency()
         await Users.getCacheContact()
         demarrerAutoAnnonce()
+        // const r = await sendNotification(
+        //     "🎉 Bienvenue sur ImoFast",
+        //     "Les notifications sont maintenant activées.",
+        //     "https://imofast.org/"
+        // );
+
+        // console.log(r)
     }catch(err){
         console.error(err)
     }

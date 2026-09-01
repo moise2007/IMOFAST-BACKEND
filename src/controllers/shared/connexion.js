@@ -5,46 +5,11 @@ const { verifyGoogleToken } = require("../../services/verifyIdGoogle.service")
 const {Filter} = admin.firestore
 const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken")
-
-// Seuls ces rôles ont une collection Firestore + une route /api/{role}/create
-// correspondantes. Sans cette liste, "role" (qui vient directement de
-// req.params.role) pouvait servir à interroger n'importe quelle collection
-// Firestore (db.collection(role)) ou appeler n'importe quelle route interne
-// (/api/${role}/create) — faille de sécurité corrigée ci-dessous.
+const { createSession } = require("../../services/cookies/cookie.service")
 const ROLES_AUTORISES = ["bailleur", "locataire"]
 
 
-// funciton de creation du coookie
-
-const setCookieSession = (res,sessionId) =>{
-    const token = generateTokenSession(sessionId)
-    const isProd = process.env.ETAT === "production"
-    res.cookie("token",token,{
-        httpOnly: true,
-        secure:   isProd,
-        sameSite: isProd ? "none": "lax",
-        path: "/",
-        domain: isProd ? ".imofast.org": undefined,
-        signed: true,
-        maxAge:   365 * 24 * 3600000,
-    })
-}
-
-//function de creation de la session
-const createSession  = async (res,userId)=>{
-    const now = new Date()
-    const expireAt = new Date()
-    expireAt.setMonth(now.getMonth() +12)
-
-    const sessionRef = await db.collection("session").add({
-        userId,
-        createAt: now,
-        expireAt,
-    })
-    setCookieSession(res,sessionRef.id)
-}
 // construction du filtre
-
 const buildVerifiedFilter = (email,telephone) =>{
     const filters = []
     const VerifiedIdentifiant = Filter.or(
@@ -128,7 +93,6 @@ const connexion = async(req, res) => {
                     msg: 'Token Google inValide'
                 })
             }
-            console.log(uGoogle)
             email = uGoogle.email ?? email
         }
         
@@ -204,7 +168,14 @@ const connexion = async(req, res) => {
             
             }
         // creation de la sessio et du cookie
-        await createSession(res,user.id)
+        const validCreatedSession = await createSession(res,user.id, role,req)
+        if(!validCreatedSession){
+            return res.status(400).json({
+                success: false,
+                msg: "erreur ce connexion",
+                redirect: false
+            })
+        }
         return res.status(200).json({
             success: true,
             redirect: false,

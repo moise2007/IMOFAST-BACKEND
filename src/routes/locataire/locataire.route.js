@@ -1,6 +1,5 @@
 // creation du router des locataires 
 const exppress =require("express")
-const { createLocataire } = require("../../controllers/locataires/create")
 const { updateLocataire } = require("../../controllers/locataires/update")
 const { deleteLocataire } = require("../../controllers/locataires/delete")
 const { deconnexionLocataire } = require("../../controllers/locataires/deconnexion")
@@ -9,6 +8,7 @@ const { verifieEmailLocataire } = require("../../controllers/locataires/verifieE
 const { updatePasswordLocataire } = require("../../controllers/locataires/updatepaswword")
 const { authLocataire, authBailleurLocataireAdmin } = require("../../middlewares/auth")
 const { getProfilLocataire } = require("../../controllers/locataires/getProfil")
+const { createLocataire } = require("../../controllers/locataires/create.controller")
 const routerLocataire = exppress.Router()
 
 
