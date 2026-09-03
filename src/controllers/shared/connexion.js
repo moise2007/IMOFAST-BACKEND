@@ -1,6 +1,5 @@
 const { generateTokenSession } = require("../../services/tokenSession")
 const { db, admin } = require("../../config/firebase")
-const { verifyFacebookToken } = require("../../services/verifyIdFacebook.service")
 const { verifyGoogleToken } = require("../../services/verifyIdGoogle.service")
 const {Filter} = admin.firestore
 const bcrypt = require("bcrypt")
@@ -65,13 +64,12 @@ const connexion = async(req, res) => {
     try {
         let user
 
-        // recuperatio du token ou l'email et du mot de passe
+        // recuperation du token ou l'email et du mot de passe
         let { nom="",prenom=null, password=null, email="",photoProfil=null, telephone = null, tokenGoogle= null } = req.body
 
         //role de connexion
         const role = req.params.role
 
-        // Le rôle vient de l'URL : on le valide avant de s'en servir pour
         // interroger Firestore ou appeler une route interne.
         if (!ROLES_AUTORISES.includes(role)) {
             return res.status(400).json({
@@ -107,68 +105,70 @@ const connexion = async(req, res) => {
         //recheche des utilisateurs utlisateurs similaire
         const filter = buildVerifiedFilter(email,telephone)
         const snapShot = await db.collection(role).where(filter).get()
-            if(snapShot.empty){
-                
-                // en cas authentification normal erreur
-                if(!uGoogle){
-                    return res.status(404).json({
-                        success: false,
-                        redirect: false,
-                        path: null,
-                        msg: "Aucun compte trouvé avec ces identifiants"
-                    })
-
-                }
-
-                try{
-                    //en cas authentification par google alors on creer le compte
-                    const data= await createCompteGoogle(role,{
-                        nom,prenom,email,telephone,photoProfil,idTokenGoogle: tokenGoogle,hasId: true
-                    })
-                    // Le cookie a été posé par la route /create
-                    return res.status(200).json({
-                        success: true,
-                        redirect: true,
-                        path: "completer",
-                        msg: "Compte créé et connecté avec Google"
-                    })
-                }
-                catch(err){
-                    console.error(`Création compte Google [${role}] :`, err.message)
-                    return res.status(409).json({
-                        success: false,
-                        redirect: false,
-                        path: null,
-                        msg: err.message || "Impossible de créer ce compte Google"
-                    })
-                }
-            }
-            else{
-                const userDoc = snapShot.docs[0]
-                user = {id:userDoc.id , ...userDoc.data()}
-
-                // verification du mot de passe 
-                if(!uGoogle){
-                    if(!password){
-                        return res.status(400).json({
-                            success: false,
-                            msg: "Mot de passe requis"
-                        })
-                    }
-                    const isValid = await bcrypt.compare(password, user.password)
-                    if(!isValid){
-                        return res.status(400).json({
-                            success: false,
-                            redirect: false,
-                            path: null,
-                            msg: "Mot de passe invalide"
-                        })
-                    }
-                }
+        if(snapShot.empty){
             
+            // en cas authentification normal erreur
+            return res.status(404).json({
+                success: false,
+                redirect: false,
+                path: null,
+                msg: "Aucun compte trouvé avec ces identifiants"
+            })
+
+            
+
+            // try{
+            //     //en cas authentification par google alors on creer le compte
+            //     const data= await createCompteGoogle(role,{
+            //         nom,prenom,email,telephone,photoProfil,idTokenGoogle: tokenGoogle,hasId: true
+            //     })
+            //     // Le cookie a été posé par la route /create
+            //     return res.status(200).json({
+            //         success: true,
+            //         redirect: true,
+            //         path: "completer",
+            //         msg: "Compte créé et connecté avec Google"
+            //     })
+            // }
+            // catch(err){
+            //     console.error(`Création compte Google [${role}] :`, err.message)
+            //     return res.status(409).json({
+            //         success: false,
+            //         redirect: false,
+            //         path: null,
+            //         msg: err.message || "Impossible de créer ce compte Google"
+            //     })
+            // }
+        }
+        else{
+            const userDoc = snapShot.docs[0]
+            user = {id:userDoc.id , ...userDoc.data()}
+
+            // verification du mot de passe 
+            if(!uGoogle){
+                if(!password){
+                    return res.status(400).json({
+                        success: false,
+                        msg: "Mot de passe requis"
+                    })
+                }
+                console.log(user.password)
+                const isValid = await bcrypt.compare(password, user.password)
+                if(!isValid){
+                    return res.status(400).json({
+                        success: false,
+                        redirect: false,
+                        path: null,
+                        msg: "Mot de passe invalide"
+                    })
+                }
             }
+        
+        }
+        console.log("ok")
         // creation de la sessio et du cookie
         const validCreatedSession = await createSession(res,user.id, role,req)
+        console.log(validCreatedSession)
         if(!validCreatedSession){
             return res.status(400).json({
                 success: false,
@@ -185,8 +185,6 @@ const connexion = async(req, res) => {
     }
     catch (err) {
         console.log(`erreur connexion [${req.params?.role}]: `+err)
-        // Aligné sur le reste du code (createBailleur, middleware) : une
-        // erreur serveur renvoie un statut 500, pas 200.
         return res.status(500).json({
             success: false,
             redirect: false,

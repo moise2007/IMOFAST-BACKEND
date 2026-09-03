@@ -9,7 +9,6 @@ const cookieParser = require("cookie-parser")
 
 
 
-
 async function createMessage(msg,receiverId){
     try{
         const messageFireBase = new Message(msg).toFirebase()

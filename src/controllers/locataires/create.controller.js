@@ -106,7 +106,6 @@ const createLocataire = async (req, res) => {
                         Filter.where("verification.emailVerifie", "==", true),
                         Filter.where("verification.telephoneVerifie", "==", true),
                     )
-                    
                 )
             );
             if (!snapEmail.empty) {
@@ -131,6 +130,7 @@ const createLocataire = async (req, res) => {
 
         // suppression des doublons
         await supprimerDoublonsNonVerifies(email, telephone);
+        
 
         const userData = { email, telephone, photoProfil, prenom, nom, uidGoogle, emailVerifie, password: null };
 
@@ -143,15 +143,18 @@ const createLocataire = async (req, res) => {
         const userdocRef = await db.collection("locataire").add(new Locataire(userData).toFirebase());
         const userId = userdocRef.id;
 
+        
+
         // creation du cookie de session
         const resultCreatedSession = await createSession(res,userId, "locataire",req)
-        if(resultCreatedSession){
+        if(!resultCreatedSession){
             return res.status(500).json({
                 success: false,
                 msg: "le serveur a rencontré une erreur inconnue"
             })
         }
 
+        console.log("userid : "+userId)
         // envoie du code OTP
         let otpResult = null;
         if (!userData.emailVerifie) {

@@ -8,6 +8,10 @@ const {sendOTP} = require("../config/termii")
 const { verifieTelephone } = require("../controllers/locataires/updateTelephone")
 const { validatorEmail, validatorPhoneNumber, validatorPassword } = require("../utils/validator/validator")
 const bcrypt = require("bcrypt")
+const { updatePassword } = require("../controllers/Otp/updatePassword.controller")
+const { updateIdentifiant } = require("../controllers/Otp/updateIdentifant.controller")
+const { sendCode } = require("../controllers/Otp/sendCode.controller")
+const { verifieCode } = require("../controllers/Otp/verifieCode.controller")
 const routerOTP = express.Router()
 
 
@@ -73,145 +77,10 @@ routerOTP.post("/verifie-email/code/:role",async(req,res)=>{
     }
 })
 
-routerOTP.patch("update-password",async(req,res)=>{
-    try{
-        const {role, password, identifiant} = req.body;
+routerOTP.patch("update-password",updatePassword)
 
-        if(!["bailleur","locataire"].includes(role)){
-            return res.status(400).json({
-                success: false,
-                msg: "le role spécifié est invalide" 
-            });
-        }
-        const passwordValid = validatorPassword(password)
-        if(!passwordValid){
-            return res.status(400).json({
-                success: false,
-                msg: "le mot de passe ne corresponds pas aux critères" 
-            });
-        }
 
-        const userVerifie = await db.collection("identifiantVerifie").where("identifiant","==",identifiant).get()
-
-        if(userVerifie.empty){
-            return  res.status(400).json({
-                success: false,
-                msg: "veulliez verifie votre identifiant a nouveau" 
-            });
-        }
-        const user = userVerifie.docs[0].data()
-
-        if(new Date(user["expireAt"]) < new Date()){
-            return res.status(400).json({
-                success: false,
-                msg: "la session de modification à expirer"
-            })
-        }
-
-        const passwordHash = await bcrypt.hash(password, Number(process.env.SALTROUND))
-
-        const usersnapShot = await db.collection(role).where(Filter.or(
-            Filter.where("email","==",identifiant),
-            Filter.where("telephone","==",identifiant)
-        )).get()
-
-        if(usersnapShot.empty){
-            return res.status(400).json({
-                success: false,
-                msg: "utilisateur inexistant"
-            })
-        }
-        await userVerifie.docs[0].ref.update({password: passwordHash})
-        return res.status(200).json({
-            success: true,
-            msg: "mot de passe modifié avec success"
-        })
-    }
-    catch(err){
-        console.log(err);
-        return res.status(500).json({
-            success:  false,
-            msg: "une erreur est survenue , veulliez réessayez"
-        })
-    }
-})
-
-const AllowsCollections = ["bailleur","locataire"]
-routerOTP.post("/update-identifiant/:collection",async(req, res)=> {
-  try {
-    // reucperattion des donnes
-    const { collection } = req.params;
-    const { email, telephone, lastEmail, lastTelephone } = req.body;
-    console.log(req.body)
-    // verification de la collection
-    if (!collection || !AllowsCollections.includes(collection))
-      return res.status(200).json({ success: false, message: "une erreur c'est produite , veuillez réessayez plustard" });
-
-    // verifeication des identifiant
-    const data = {};
-    if (email?.trim()) {
-        data.email = email.trim().toLowerCase()
-        data["verification.emailVerifie"] = false
-    }
-    if (telephone?.trim()) {
-        data.telephone = telephone.replace(/\s/g, "")
-        data["verification.telephoneVerifie"] = false
-    }
-    if (!Object.keys(data).length || !(validatorEmail(data?.email) || validatorPhoneNumber(data?.telephone)))
-      return res.status(200).json({ success: false, message: "l'identifiant est invalide" });
-
-    // verification des doubons
-    console.log(data)
-    const doublons = await db.collection(collection).where(Filter.or(
-        data?.email 
-        ? Filter.and(
-            Filter.where("email","==",data.email),
-            Filter.or(
-                Filter.where("verification.emailVerifie","==",true),
-                Filter.where("verification.telephoneVerifie","==",true),
-            )
-        )
-        :Filter.and(
-            Filter.where("telephone","==",data.telephone),
-            Filter.or(
-                Filter.where("verification.emailVerifie","==",true),
-                Filter.where("verification.telephoneVerifie","==",true),
-            )
-        )
-    )).get()
-
-    if(!doublons.empty){
-        return res.status(200).json({
-            success: false,
-            msg: "cet identifiant exite déjà"
-        })
-    }
-
-    await db.collection(collection)
-    .where( data.email ? Filter.where("email","==", lastEmail) : Filter.where("telephone","==", lastTelephone))
-    .get().then(doc => {
-        if(doc.empty){
-            return res.status(200).json({
-                success: false,
-                msg: "une erreur inconnue s'est produite"
-            })
-        }
-        doc.docs[0].ref .update({...data})
-    })
-    
-
-    return res.status(200).json({
-      success: true,
-      message: "Contact modifié avec succès",
-    });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({
-      success: false,
-      message: "Erreur lors de la modification"
-    });
-  }
-})
+routerOTP.post("/update-identifiant/:collection",updateIdentifiant)
 
 
 //envoie de du code par email
@@ -277,6 +146,19 @@ routerOTP.post("/envoieCode/sms",async(req,res)=>{
 })
 
 routerOTP.post('/verifieTelephone',verifieTelephone)
+
+
+// route d'evoie du code 
+routerOTP.post("/send-code",async(req,res)=>{
+    const {identifiant} = req.body;
+    return await sendCode(identifiant);
+})
+
+// route verification du code
+routerOTP.post("/verify-code/:collection",async(req,res)=>{
+    const {identifiant, newIdentifant, code, role } = req.body;
+    return await verifieCode(identifiant, newIdentifant, code, role)
+})
 
 
 module.exports = {routerOTP}

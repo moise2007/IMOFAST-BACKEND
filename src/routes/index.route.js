@@ -3,9 +3,8 @@ const express = require("express")
 const { routerOTP } = require("./otp.route")
 const { routerLocataire } = require("./locataire/locataire.route")
 const { routerBailleur } = require("./bailleur/bailleur.route")
-const { authBailleur, authBailleurLocataireAdmin, authAdminLocataire, authBailleurAdmin, authAdmin } = require("../middlewares/auth")
-const multer = require("multer")
-const { upload,uploadMedia } = require("../config/multer")
+const { authBailleurLocataireAdmin, authAdminLocataire, identifierUtilisateur } = require("../middlewares/auth")
+const { uploadMedia } = require("../config/multer")
 const { identifiantExiste } = require("../controllers/shared/identifiantExiste")
 const { connexion } = require("../controllers/shared/connexion")
 const { upLoadFiles, supprimerMedia } = require("../controllers/shared/upload")
@@ -32,6 +31,7 @@ const { routerPaiement } = require("./paiement.route")
 const { routerServiceClient } = require("./serviceClient.route")
 const { routerAnalitic } = require("./analytic.route")
 const { routerAuthAdmin } = require("./admin/auth.route")
+const { batimentRouter } = require("./batiment.route")
 
 
 const router = express.Router()
@@ -63,6 +63,14 @@ router.use("/contact",limitGlobal,routerContact)
 router.use("/alerte",limitGlobal,routerAlerteur)
 router.use("/service-client",limitGlobal,routerServiceClient)
 router.use("/paiement",limitAuth,routerPaiement)
+router.use("/batiment",limitGlobal,batimentRouter)
+router.get("/init",limitGlobal, identifierUtilisateur,(req,res)=>{
+    return res.status(200).json({
+        success: true,
+        role: req.role,
+        user: req?.user
+    })
+} )
 
 
 

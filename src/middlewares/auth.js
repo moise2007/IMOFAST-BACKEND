@@ -196,6 +196,7 @@ const identifierUtilisateur = async (req, res, next) => {
     req.user = null
     req.sessionId = null
  
+    console.log("ok")
     try {
         const token = getToken(req)
         if (!token) return next()
