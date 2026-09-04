@@ -28,7 +28,6 @@ const createBailleur = async(req,res)=>{
         } = req.body
 
         let user,uGoogle, emailVerifie = false, uidGoogle
-        console.log(idTokenGoogle)
 
         // verification des donnees
         if(idTokenGoogle){
@@ -42,16 +41,15 @@ const createBailleur = async(req,res)=>{
             }
 
             const user = uGoogle.user
-            nom = user.nom
-            prenom = user.prenom
-            telephone = user.telephone
+            nom = user.nom.trim() != "" ? user.nom : nom
+            prenom = user.prenom.trim() != "" ? user.prenom : prenom
+            telephone = user.telephone.trim() != "" ? user.telephone : telephone
             uidGoogle = user.uidGoogle
             emailVerifie = user.emailVerifie
             photoProfil = user.photoProfil
             email = user.email
             password =  null
         }
-
         if(password && !validatorPassword(password)){
             return res.status(422).json({
                 success: false,
@@ -59,6 +57,8 @@ const createBailleur = async(req,res)=>{
             })
         }
 
+        email = email?.trim() === "" ? null : email.trim()
+        telephone = telephone?.trim() === "" ? null : telephone.trim()
         const nomIsvalid = validateText(nom,{min:2 , max: 1024, required: true, fieldName: "nom"})
         if(nomIsvalid){
             return res.status(422).json({
@@ -97,7 +97,8 @@ const createBailleur = async(req,res)=>{
         
         const orFilters = [];
 
-        telephone = telephone.startsWith("+237") ? telephone : `+237${telephone}`
+        if(telephone)
+            telephone = telephone?.startsWith("+237") ? telephone : `+237${telephone}`
         if (email) {
             orFilters.push(
                 Filter.and(
