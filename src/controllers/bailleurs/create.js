@@ -28,7 +28,7 @@ const createBailleur = async(req,res)=>{
         } = req.body
 
         let user,uGoogle, emailVerifie = false, uidGoogle
-    
+        console.log(idTokenGoogle)
 
         // verification des donnees
         if(idTokenGoogle){
@@ -60,7 +60,6 @@ const createBailleur = async(req,res)=>{
         }
 
         const nomIsvalid = validateText(nom,{min:2 , max: 1024, required: true, fieldName: "nom"})
-        console.log(nomIsvalid)
         if(nomIsvalid){
             return res.status(422).json({
                 success: false,
@@ -68,7 +67,7 @@ const createBailleur = async(req,res)=>{
             })
         }
 
-        if(validateText(prenom,{min:2 , max: 1024, required: false})){
+        if(validateText(prenom,{min:2 , max: 1024, required: false, fieldName: "prénom"})){
             return res.status(422).json({
                 success: false,
                 msg: "le prénom est invalide"

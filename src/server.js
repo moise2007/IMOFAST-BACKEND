@@ -51,7 +51,6 @@ async function startServer(){
         //     "Les notifications sont maintenant activées.",
         //     "https://imofast.org/"
         // );
-
         // console.log(r)
     }catch(err){
         console.error(err)

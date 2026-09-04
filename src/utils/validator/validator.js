@@ -60,10 +60,7 @@ function validateText(value, { min = 1, max = 100, required = true, fieldName = 
   if (text.length > max) {
     return `${fieldName} doit contenir au maximum ${max} caractères`;
   }
-  // Bloque les opérateurs/injections NoSQL courantes
-  if (/\$[a-zA-Z]+/.test(text)) {
-    return `${fieldName} contient des caractères non autorisés`;
-  }
+
   // Bloque les clés utilisées dans certaines injections
   if (/[{}[\]]/.test(text)) {
     return `${fieldName} contient des caractères non autorisés`;
