@@ -1,8 +1,9 @@
-const { validatorPassword } = require("../../../../imoFast-web/src/utils/validator");
+
 const { db, admin } = require("../../config/firebase");
 const { sendEmailToAlertError } = require("../../services/sendMailErrorProduction.service");
 const { Filter } = admin.firestore;
-const bcrypt = require("bcrypt")
+const bcrypt = require("bcrypt");
+const { validatorPassword } = require("../../utils/validator/validator");
 const TimeStamp = admin.firestore.Timestamp;
 
 const updatePassword  = async(req,res)=>{
@@ -15,7 +16,7 @@ const updatePassword  = async(req,res)=>{
                 msg: "le role spécifié est invalide" 
             });
         }
-        const passwordValid = validatorPassword(password)
+        const passwordValid = validatorPassword (password)
         if(!passwordValid){
             return res.status(400).json({
                 success: false,
