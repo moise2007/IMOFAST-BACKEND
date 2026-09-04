@@ -12,8 +12,8 @@ const updateDataBailleur = async(req,res)=>{
     const user = req.user
     try{
         //netoyage des donnees a modifier
-        const {nom=null,prenom=null, photoProfil=null, sexe=null,devise=null,langue=null,password,newPassword, dateNaissance=null } = req.body
-        const updateData = {nom,prenom, dateNaissance,sexe,devise,langue,photoProfil}
+        const {nom=null,prenom=null, photoProfil=null, sexe=null,devise=null,pieceIdentite,langue=null,password,newPassword, dateNaissance=null } = req.body
+        const updateData = {nom,prenom, dateNaissance,sexe,devise,langue,photoProfil,pieceIdentite}
         Object.keys(updateData).map(k =>{
             if(updateData[k]== null || updateData[k]=="" || `${updateData[k]}`.length < 3){
                 delete updateData[k]

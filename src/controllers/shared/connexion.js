@@ -65,7 +65,7 @@ const connexion = async(req, res) => {
         let user
 
         // recuperation du token ou l'email et du mot de passe
-        let { nom="",prenom=null, password=null, email="",photoProfil=null, telephone = null, tokenGoogle= null } = req.body
+        let {password=null, email=null, telephone = null, tokenGoogle= null } = req.body
 
         //role de connexion
         const role = req.params.role
@@ -152,7 +152,13 @@ const connexion = async(req, res) => {
                         msg: "Mot de passe requis"
                     })
                 }
-                console.log(user.password)
+                console.log(user)
+                if(!user.password){
+                    return res.status(400).json({
+                        success: false,
+                        msg: "veuillez cliquer sur 'continuer avec google'"
+                    })
+                }
                 const isValid = await bcrypt.compare(password, user.password)
                 if(!isValid){
                     return res.status(400).json({

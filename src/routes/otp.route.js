@@ -77,7 +77,7 @@ routerOTP.post("/verifie-email/code/:role",async(req,res)=>{
     }
 })
 
-routerOTP.patch("update-password",updatePassword)
+routerOTP.patch("/update-password",updatePassword)
 
 
 routerOTP.post("/update-identifiant/:collection",updateIdentifiant)
@@ -151,13 +151,13 @@ routerOTP.post('/verifieTelephone',verifieTelephone)
 // route d'evoie du code 
 routerOTP.post("/send-code",async(req,res)=>{
     const {identifiant} = req.body;
-    return await sendCode(identifiant);
+    return await sendCode(identifiant,res);
 })
 
 // route verification du code
 routerOTP.post("/verify-code/:collection",async(req,res)=>{
     const {identifiant, newIdentifant, code, role } = req.body;
-    return await verifieCode(identifiant, newIdentifant, code, role)
+    return await verifieCode(identifiant, newIdentifant, code, role,res)
 })
 
 

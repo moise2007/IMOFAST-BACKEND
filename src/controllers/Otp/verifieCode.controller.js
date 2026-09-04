@@ -3,26 +3,26 @@ const { OTPService } = require("../../services/opt.service")
 const { validatorEmail, validatorPhoneNumber } = require("../../utils/validator/validator")
 const { Filter } = admin.firestore
 
-const verifieCode = async(identifiant, newIdentifant, code, role )=>{
+const verifieCode = async(identifiant, newIdentifant, code, role,res )=>{
     try{
         // verification des identifiants
         const isEmail = validatorEmail(identifiant);
         const isTelephone = validatorPhoneNumber(identifiant);
 
         if(!isEmail && !isTelephone){
-            return {
+            return res.status(422).json({
                 success: false,
                 msg: `${!isEmail ? "email ": "telephone "} invalide`
-            }
+            })
         }
         // verification du code
         const otpservice = new OTPService()
         const response = otpservice.verifierCode({identifiant: newIdentifant ?? identifiant, code})
         if(!response.valid){
-            return {
+            return res.status(400).json({
                 success: false,
                 msg: response.msg
-            }
+            })
         }
 
         // verification de l'existence de l'utilisateur
@@ -32,7 +32,7 @@ const verifieCode = async(identifiant, newIdentifant, code, role )=>{
         )).get()
 
         if(userDoc.empty){
-            return res.status(200).json({
+            return res.status(400).json({
                 success: false,
                 msg: "utilisateur introuvable"
             })
@@ -62,10 +62,10 @@ const verifieCode = async(identifiant, newIdentifant, code, role )=>{
             createAt: dateActuel,
         })
 
-        return {
+        return res.status(200).json({
             success: true,
             msg: response.msg
-        }
+        })
 
         
     }

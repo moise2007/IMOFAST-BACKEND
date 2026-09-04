@@ -68,6 +68,7 @@ class Locataire {
       idConversationAdmin: this.idConversationAdmin,
       statut: null,
       sexe: null,
+      metier: null,
       finSuspension: null,
       status:"actif", // suspendus ou blacklister
 

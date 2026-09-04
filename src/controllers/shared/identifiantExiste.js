@@ -41,7 +41,7 @@ const identifiantExiste = async (req, res) => {
               )
             : db.collection(role).where(
                 Filter.and(
-                    Filter.where("telephone", "==", identifiant.trim()),
+                    Filter.where("telephone", "==", `${identifiant.trim().startsWith("+237") ? identifiant.trim() : `+237${identifiant.trim()}`}`),
                     Filter.or(
                         Filter.where("verification.telephoneVerifie", "==", true),
                         Filter.where("verification.emailVerifie", "==", true),

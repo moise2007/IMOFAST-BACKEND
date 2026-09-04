@@ -5,8 +5,8 @@ const updateLocataire = async(req,res)=>{
    try{
         console.log(req.body)
         //netoyage des donnees a modifier
-        const {nom=null,prenom=null, photoProfil=null, sexe=null,devise=null,langue=null,password,newPassword, dateNaissance=null,pieceIdentite=null,preferences} = req.body
-        const updateData = {nom,prenom, dateNaissance,sexe,devise,langue,photoProfil,pieceIdentite,preferences}
+        const {nom=null,prenom=null, photoProfil=null, sexe=null,devise=null,langue=null,password,newPassword, metier, dateNaissance=null,pieceIdentite=null,preferences} = req.body
+        const updateData = {nom,prenom, dateNaissance,sexe,devise,langue,photoProfil,pieceIdentite,preferences, metier}
         Object.keys(updateData).map(k =>{
             if(updateData[k]== null || updateData[k]=="" || `${updateData[k]}`?.length < 3){
                 delete updateData[k]

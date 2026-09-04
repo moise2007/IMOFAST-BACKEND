@@ -1,6 +1,8 @@
+const { validatorPassword } = require("../../../../imoFast-web/src/utils/validator");
 const { db, admin } = require("../../config/firebase");
 const { sendEmailToAlertError } = require("../../services/sendMailErrorProduction.service");
 const { Filter } = admin.firestore;
+const bcrypt = require("bcrypt")
 const TimeStamp = admin.firestore.Timestamp;
 
 const updatePassword  = async(req,res)=>{
@@ -31,6 +33,7 @@ const updatePassword  = async(req,res)=>{
         }
         const user = userVerifie.docs[0].data()
 
+
         if(new Date(user["expireAt"]) < new Date()){
             return res.status(400).json({
                 success: false,
@@ -38,12 +41,10 @@ const updatePassword  = async(req,res)=>{
             })
         }
 
-        const passwordHash = await bcrypt.hash(password, Number(process.env.SALTROUND))
-
         const usersnapShot = await db.collection(role).where(Filter.or(
             Filter.where("email","==",identifiant),
             Filter.where("telephone","==",identifiant)
-        )).get()
+        )).limit(1).get()
 
         if(usersnapShot.empty){
             return res.status(400).json({
@@ -51,9 +52,11 @@ const updatePassword  = async(req,res)=>{
                 msg: "utilisateur inexistant"
             })
         }
-        await userVerifie.docs[0].ref.update({
-            password: passwordHash,
-            updatedAt: TimeStamp.now()
+        const passwordHash = await bcrypt.hash(password, Number(process.env.SALTROUND))
+
+        await usersnapShot.docs[0].ref.update({
+            "password": passwordHash,
+            "updatedAt": TimeStamp.now()
         })
         return res.status(200).json({
             success: true,
