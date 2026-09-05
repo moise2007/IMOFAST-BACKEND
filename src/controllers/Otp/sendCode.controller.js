@@ -27,7 +27,7 @@ const sendCode = async(identifiant,res)=>{
         }
         else{
             console.log("telephone: "+code)
-            return res.status(200),json({
+            return res.status(200).json({
                 success: true,
                 msg: "le code envoyé avec success"
             })

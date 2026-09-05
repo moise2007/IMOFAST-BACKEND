@@ -6,12 +6,31 @@ const {Bailleur} = require("../../models/bailleur")
 const bcrypt = require("bcrypt")
 const { CompletudeProfilBailleur } = require("../../services/notation/completudeBailleur")
 const { createSession } = require("../../services/cookies/cookie.service")
+const { OTPService } = require("../../services/opt.service")
+const { sendEmail } = require("../../services/mail.service")
 // l'inscription) avec le même code.
 const REPONSE_ERREUR_SERVEUR = {
     success: false,
     msg: "Une erreur est survenue, veuillez réessayer plus tard"
 }
 
+
+async function sendCode(identifiant){
+    // generation du code de verification 
+        const Otpservice = new OTPService()
+        const responseCode = Otpservice.generateOTP(identifiant)
+        const code = responseCode.code
+
+        // envoie du code
+        if(isEmail){
+            const data = await sendEmail(identifiant, code)
+            return data?.success
+        }
+        else{
+            console.log("telephone: "+code)
+            return true
+        }
+}
 /**
  * 
  * @param {Request} req 
@@ -24,7 +43,7 @@ const createBailleur = async(req,res)=>{
         // recuperation des donnees
         let {
             nom, email=null, prenom=null, telephone=null, password=null, photoProfil=null,typeProfil='bailleur',
-            dateNaissance = null, localisation= null, idTokenGoogle, cni =null, imageAnciensContrats = null,
+            dateNaissance = null, localisation= null, idTokenGoogle, cni =null, imageAnciensContrats = null,nomAgence
         } = req.body
 
         let user,uGoogle, emailVerifie = false, uidGoogle
@@ -97,8 +116,10 @@ const createBailleur = async(req,res)=>{
         
         const orFilters = [];
 
-        if(telephone)
+        if(telephone){
             telephone = telephone?.startsWith("+237") ? telephone : `+237${telephone}`
+        }
+            
         if (email) {
             orFilters.push(
                 Filter.and(
@@ -179,7 +200,7 @@ const createBailleur = async(req,res)=>{
             photoProfil,dateNaissance, localisation,
             uidGoogle :  uidGoogle ?? null,
             cni, imageAnciensContrats, completudeProfilPourcentage, 
-            emailVerifie : emailVerifie
+            emailVerifie : emailVerifie, nomAgence
         })
 
         const bailleurFirebaseObject = bailleur.toFirebase()
@@ -205,6 +226,7 @@ const createBailleur = async(req,res)=>{
         }
 
         // envoie du code
+        await sendCode(email);
         
 
         console.log("bailleur crée : "+userdoc.id)
