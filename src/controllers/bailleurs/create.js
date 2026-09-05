@@ -15,7 +15,7 @@ const REPONSE_ERREUR_SERVEUR = {
 }
 
 
-async function sendCode(identifiant){
+async function sendCode(identifiant,isEmail){
     // generation du code de verification 
         const Otpservice = new OTPService()
         const responseCode = Otpservice.generateOTP(identifiant)
@@ -226,7 +226,7 @@ const createBailleur = async(req,res)=>{
         }
 
         // envoie du code
-        await sendCode(email);
+        const sendEmail = await sendCode(email,true);
         
 
         console.log("bailleur crée : "+userdoc.id)
@@ -235,6 +235,7 @@ const createBailleur = async(req,res)=>{
             msg:"utilisateur a été crée avec success",
             user,
             redirect: false,
+            successSendEmail: sendEmail,
             path:null
         })
     
