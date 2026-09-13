@@ -75,7 +75,7 @@ const sendEmail= async(email,code=null,html=null, title=null)=>{
 
       // generation de du contenu de l'email
       const content = html ? html : generateEmail(code)
-      const subject = title ? tile : "inscripton sur ImoFast"
+      const subject = title ? title : "inscripton sur ImoFast"
 
       // envoie de l'email
       const {data,error}=await resend.emails.send({

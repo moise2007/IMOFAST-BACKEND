@@ -213,7 +213,13 @@ const createBailleur = async(req,res)=>{
         let idUser = userdoc.id
         user = {...userdoc.data()};
 
-        await createSession(res,idUser,"bailleur",req)
+        const successCreateSession = await createSession(res,idUser,"bailleur",req)
+        if(!successCreateSession){
+            return res.status(400).json({
+                success: false,
+                msg: "erreur de création de la session."
+            })
+        }
 
         const estVerifie = user?.verification?.emailVerifie || user?.verification?.telephoneVerifie
 

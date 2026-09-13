@@ -1,20 +1,19 @@
 require("dotenv").config()
 const http = require("http")
 const {Server} = require("socket.io")
-
 const { app } = require("./app")
 const { Currency } = require("./services/auto/monnaie.auto")
 const { Users } = require("./services/auto/usersGetting")
 const { demarrerAutoAnnonce } = require("./services/auto/authAnnonce")
 const { initSocket } = require("./config/socket.io")
-const { sendEmail } = require("./services/mail.service")
-const { sendNotification } = require("./services/notification.service")
-const { db } = require("./config/firebase")
+const { initCache, makeMigration } = require("./cache/cache.index")
+// chargement de firebase
+require("./config/firebase")
+
 
 const port = process.env.PORT || 3000
 
-// chargement de firebase
-require("./config/firebase")
+
 
 // creation du serveur
 const server = http.createServer(app)
@@ -46,19 +45,19 @@ async function startServer(){
         await Currency.autoUpdateCurrency()
         await Users.getCacheContact()
         demarrerAutoAnnonce()
-        // const r = await sendNotification(
-        //     "🎉 Bienvenue sur ImoFast",
-        //     "Les notifications sont maintenant activées.",
-        //     "https://imofast.org/"
-        // );
-        // console.log(r)
+        await initCache()
+        await makeMigration()
+        console.log("tous est pret")
     }catch(err){
         console.error(err)
     }
 }
 startServer()
 
-server.listen(port, '0.0.0.0', () => {
+server.listen(port, '0.0.0.0', (err) => {
+    if(err){
+        return console.log(`une erreur incconue est survenue : ${err}`)
+    }
     console.log(`Serveur démarré sur le port ${port}`)
 })
 

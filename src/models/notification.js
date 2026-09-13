@@ -23,12 +23,12 @@ class Notification {
 
     toFirebase() {
         return {
-            // ── Destinataire ─────────────────────────
+            // Destinataire
             destinataireId:   this.destinataireId,
             typeDestinataire: this.typeDestinataire, // "bailleur" | "locataire"
             idPublic: this.idPublic,
 
-            // ── Type ─────────────────────────────────
+            // Type
             type: this.type,
             // "nouvelle_candidature"
             // "candidature_acceptee"
@@ -37,18 +37,18 @@ class Notification {
             // "nouveau_commentaire"
             // "nouvelle_note"
 
-            // ── Cible ─────────────────────────────────
+            // Cible
             cibleId:   this.cibleId,   // id du bien, candidature, message...
             typeCible: this.typeCible, // "bien" | "candidature" | "message" | "commentaire"
 
-            // ── Contenu ───────────────────────────────
+            // Contenu
             titre:   this.titre   ?? "",
             message: this.message ?? "",
 
-            // ── Statut ───────────────────────────────
+            // Statut
             lu: false,
 
-            // ── Dates ────────────────────────────────
+            // Dates
             createdAt: timestamp.now(),
         }
     }

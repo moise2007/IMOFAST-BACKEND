@@ -45,7 +45,7 @@ const upLoadFiles = async (req,res)=>{
         )
         return res.status(200).json({
             success: true,
-            msg: "Fichiers uploadés avec succès",
+            msg: "Fichiers uploadés avec succèss",
             data: result
         })
     }

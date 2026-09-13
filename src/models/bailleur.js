@@ -71,7 +71,9 @@ class Bailleur{
             status : "actif", // ou suspendus ou blaclister
             dateSuspension : null,
             dateBlackList: null,
-            createAt: new Date(),
+
+            isVerifie: false,
+            isCertifie: false,
 
             verification: {
                 emailVerifie : this.emailVerifie,
@@ -81,21 +83,28 @@ class Bailleur{
                 estDigne: false,
             },
             score:{
-                global: 75,
+                global: 40,
                 badge: "bronze",
             },
             notation:{
                 moyenne: 0,
                 nombresAvis : 0,
+                completudeProfilPourcentage : this.completudeProfilPourcentage,
             },
-            completudeProfilPourcentage : this.completudeProfilPourcentage,
+            
             signalements: {
                 total : 0,
+                historiques: [],
                 dernierSignalementAt : null ,
             },
             activite:{
                 annoncesActives: 0,
                 annnoncesTotal: 0,
+                bien: 0,
+                batiment: 0,
+                bienLibre: 0,
+                bienConstruction: 0,
+                bienOccuper: 0,
                 derniereActiviteAt:  null,
                 delaiReponseHeure: null,
             },
@@ -109,8 +118,8 @@ class Bailleur{
             sexe: this.sexe,
             devise : this.devise,
             langue: this.langue,
-            createAt: timestamp.now(),
-            updateAt: timestamp.now(),
+            createdAt: timestamp.now(),
+            updatedAt: timestamp.now(),
             lastConnexion: timestamp.now()
         }
     }

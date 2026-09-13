@@ -8,13 +8,13 @@ const createNotification = async(req,res)=>{
         const { destinataireId, typeDestinataire, type, cibleId, typeCible, titre, message,} =req.body
 
         // validation du type de notification
-        // if(!["candidature","conversation","message","favoris","commentaire","note"].includes(type)){
-        //     return res.status(409).json({
-        //         success: false,
-        //         msg: req.t("invalid_notification_type",{ns:"errors"}),
+        if(!["candidature","conversation","message","favoris","commentaire","note"].includes(type)){
+            return res.status(409).json({
+                success: false,
+                msg: req.t("invalid_notification_type",{ns:"errors"}),
 
-        //     })
-        // }
+            })
+        }
         const idPublic = createId()
 
         // creation de la notification

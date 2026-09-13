@@ -48,7 +48,7 @@ const createbatiment = async(req,res)=>{
         })
 
         // creation de l'object dans fireBase
-        await db.collection("batiment").add(batimentObject);
+        await db.collection("batiment").add(batimentObject.toFireBase());
 
         return res.status(201).json({
             success: true,

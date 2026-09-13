@@ -1,4 +1,5 @@
 const { admin, db } = require("../../config/firebase");
+const { sendEmailToAlertError } = require("../../services/sendMailErrorProduction.service");
 const { Filter } = admin.firestore;
 
 const getBatiments = async (req, res) => {
@@ -32,7 +33,7 @@ const getBatiments = async (req, res) => {
             batimentQuery = batimentQuery
                 .where("nom", ">=", nom)
                 .where("nom", "<=", `${nom}\uf8ff`)
-                .orderBy("nom", "asc");
+                // .orderBy("nom", "asc");
         } else {
             batimentQuery = batimentQuery.orderBy("createdAt", "desc");
         }

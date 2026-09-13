@@ -1,3 +1,7 @@
+const { annonceCache } = require("../../cache/annonce.cache");
+const { bienCache } = require("../../cache/bien.cache");
+const { candidatureCache } = require("../../cache/candidature.cache");
+const { locatairesCache } = require("../../cache/locataires.cache");
 const  { admin, db } = require("../../config/firebase");
 const { Users } = require("../../services/auto/usersGetting");
 const  { susprendreCompte } = require("../../services/suspensionCompte")
@@ -13,11 +17,11 @@ const getdataAcceuil = async(req,res)=>{
         const role = req.role 
         let data = {}
 
-        //recuperation des Locataires 
-        const locataires = Users?.COMPTE_CACHE?.locataire
+        //recuperation des bailleurs
+        const locataires  = locatairesCache.cache.values()
 
         if(!["admin","bailleur"].includes(role)){
-            await susprendreCompte(req.user.id,req.role ?? "bailleur",field)
+            await susprendreCompte(req.user.id,req.role ?? "bailleur",null)
             return res.status(203).json({
                 success: false,
                 msg: ' votre compte a été suspendus pour 7 jours car nous avons répéré uns activité inhabituelle'
@@ -25,18 +29,10 @@ const getdataAcceuil = async(req,res)=>{
         }
 
         // RECUPERATION DES ANNONCES
-
-        const AnnoncesSnapshot = await db.collection("annonce")
-            .where("bailleurId","==",userId)
-            .limit(5)
-            .get()
-
-
-        let annonces = AnnoncesSnapshot.docs.map(doc=>doc.data())
+        let annonces = annonceCache.cache.values?.filter(annonce => annonce?.bailleurId == userId)
 
         // recuperation des biens des annonces
-        const idBiens = annonces.map(ann=>ann.bienId).filter(Boolean)
-        const biens = await getDocumentsByPublicIds(idBiens, "bien")
+        const biens = bienCache.cache.values?.filter(bien => bien?.bailleurId == userId)
 
         annonces = annonces.map(ann=>{
             const bien = biens.find(bien => bien?.idPublic == ann?.bienId)
@@ -45,54 +41,26 @@ const getdataAcceuil = async(req,res)=>{
         data = {...data, annonces}
 
         // recuperation du nombre d'annonces total
-        const annonceTotal = (await db.collection("annonce")
-            .where("bailleurId","==",userId).count().get()).data().count
+        const annonceTotal = annonces.length ?? 0
 
         // recuperation des Annonces Actives
-        const annonceActive = (await db.collection("annonce")
-            .where(Filter.and(
-                Filter.where("bailleurId","==",userId),
-                Filter.where("status","==","publier")
-            ))
-            .count().get()).data().count
+        const annonceActive = annonces?.filter(ann=> ann?.status == "publier")?.length ?? 0
 
         // recuperation des vues des annonces
-        const queryVues = db.collection("annonce")
-            .where("bailleurId","==",userId)
-        
-        const snapshotVues = await queryVues.aggregate({
-            totalVues: AggregateField.sum("statistiques.vues")
-        }).get()
-        const vues = snapshotVues.data()?.totalVues ?? 0
+        const queryVues = annonces?.map(annonce => annonce?.statistiques?.vues ?? 0)?.reduce((total, vues)=> total + vues, 0) ?? 0
 
         // recuperation du nombre de demande 
-        const demandeTotal = (await db.collection("candidature")
-            .where("bailleurId","==",userId).count().get()).data().count
+        const demandes = candidatureCache.cache.values?.filter(demande => demande?.bailleurId == userId)
+        const demandeTotal = demandes?.length ?? 0
 
         // recuperation des candidatures non gerer
-        const demandesNonGerer = (await db.collection("candidature")
-            .where(Filter.and(
-                Filter.where("bailleurId","==",userId),
-                Filter.where("status","==","en_attente")
-            ))
-            .count().get()).data().count
+        const demandesNonGerer = demandes?.filter(demande=> demande?.status == "en_attente")?.length
         
         // recuperation des visites
-        const totalVisite = (await db.collection("candidature")
-            .where(Filter.and(
-                Filter.where("bailleurId","==",userId),
-                Filter.where("type","==","visite")
-            ))
-            .count().get()).data().count
+        const totalVisite = demandes?.filter(demande=> demande?.type == "visite")?.length
         
         // recupration des Annonces Avenir
-        const totalVisitePrevu  = (await db.collection("candidature")
-            .where(Filter.and(
-                Filter.where("bailleurId","==",userId),
-                Filter.where("type","==","visite"),
-                Filter.where("status","==","acceptee")
-            ))
-            .count().get()).data().count
+        const totalVisitePrevu  = demandes?.filter(demande=> demande?.type == "visite" && demande.status == "acceptee")?.length
 
         
 
@@ -105,13 +73,7 @@ const getdataAcceuil = async(req,res)=>{
             totalVisite: totalVisite,
             totalVisitePrevu: totalVisitePrevu
         }}
-        // RECUPERATION DES DEMANDES
-        const demandesSnapshot = await db.collection("candidature")
-        .where("bailleurId","==",userId)
-        .orderBy("createdAt","desc")
-        .limit(3)
-        .get()
-        let demandes = demandesSnapshot.docs.map(doc=>doc.data())
+
         demandes = demandes.map(demande=>{
             const locataire = locataires.find(locataire => locataire?.idPublic == demande?.locataireId)
             return {...demande, locataire}

@@ -66,7 +66,6 @@ const connexion = async(req, res) => {
 
         // recuperation du token ou l'email et du mot de passe
         let {password=null, email=null, telephone = null, tokenGoogle= null } = req.body
-
         //role de connexion
         const role = req.params.role
 
@@ -152,7 +151,6 @@ const connexion = async(req, res) => {
                         msg: "Mot de passe requis"
                     })
                 }
-                console.log(user)
                 if(!user.password){
                     return res.status(400).json({
                         success: false,
@@ -174,7 +172,6 @@ const connexion = async(req, res) => {
         console.log("ok")
         // creation de la sessio et du cookie
         const validCreatedSession = await createSession(res,user.id, role,req)
-        console.log(validCreatedSession)
         if(!validCreatedSession){
             return res.status(400).json({
                 success: false,
@@ -182,6 +179,7 @@ const connexion = async(req, res) => {
                 redirect: false
             })
         }
+        console.log("ok")
         return res.status(200).json({
             success: true,
             redirect: false,
