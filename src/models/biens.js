@@ -112,6 +112,7 @@ class Bien {
             bailleurId:this.bailleurId,
             idPublic: this.idPublic,
             description: this.desccription,
+            typeBien: "logement",
 
             //  Localisation 
             localisation: {lon:null, lat:null,ville:null,adresse:null,quatier:null,...this.localisation}, 

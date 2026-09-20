@@ -19,20 +19,20 @@ class Contrat {
 
     toFirebase() {
         return {
-            // ── Références ───────────────────────────
+            // Références
             bailleurId:  this.bailleurId,
             locataireId: this.locataireId,
             idPublic:   this.idPublic, // idPublic du bien
             bienId: this.bienId,
 
-            // ── Durée ─────────────────────────────────
+            // Durée
             dateDebut: this.dateDebut ?? null,
             dateFin:   this.dateFin   ?? null,
 
-            // ── Statut ───────────────────────────────
+            // Statut
             statut: "actif", // "actif" | "termine" | "resilie"
 
-            // ── Dates ────────────────────────────────
+            // Dates
             createdAt: timestamp.now(),
             updatedAt: timestamp.now(),
             confirm : {

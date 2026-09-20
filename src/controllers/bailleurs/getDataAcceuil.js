@@ -1,13 +1,11 @@
 const { annonceCache } = require("../../cache/annonce.cache");
 const { bienCache } = require("../../cache/bien.cache");
 const { candidatureCache } = require("../../cache/candidature.cache");
+const { conversationCache } = require("../../cache/conversation.cache");
 const { locatairesCache } = require("../../cache/locataires.cache");
 const  { admin, db } = require("../../config/firebase");
-const { Users } = require("../../services/auto/usersGetting");
 const  { susprendreCompte } = require("../../services/suspensionCompte")
 const  { getDocumentsByPublicIds } = require("../../utils/getDocumentsById")
-const {Filter} = admin.firestore
-const { AggregateField } = require("firebase-admin/firestore");
 
 
 
@@ -29,10 +27,10 @@ const getdataAcceuil = async(req,res)=>{
         }
 
         // RECUPERATION DES ANNONCES
-        let annonces = annonceCache.cache.values?.filter(annonce => annonce?.bailleurId == userId)
+        let annonces = [...annonceCache.cache.values()]?.filter(annonce => annonce?.bailleurId == userId)
 
         // recuperation des biens des annonces
-        const biens = bienCache.cache.values?.filter(bien => bien?.bailleurId == userId)
+        const biens = [...bienCache.cache.values()]?.filter(bien => bien?.bailleurId == userId)
 
         annonces = annonces.map(ann=>{
             const bien = biens.find(bien => bien?.idPublic == ann?.bienId)
@@ -47,10 +45,10 @@ const getdataAcceuil = async(req,res)=>{
         const annonceActive = annonces?.filter(ann=> ann?.status == "publier")?.length ?? 0
 
         // recuperation des vues des annonces
-        const queryVues = annonces?.map(annonce => annonce?.statistiques?.vues ?? 0)?.reduce((total, vues)=> total + vues, 0) ?? 0
+        const vues = annonces?.map(annonce => annonce?.statistiques?.vues ?? 0)?.reduce((total, vues)=> total + vues, 0) ?? 0
 
         // recuperation du nombre de demande 
-        const demandes = candidatureCache.cache.values?.filter(demande => demande?.bailleurId == userId)
+        let demandes = [...candidatureCache.cache.values()]?.filter(demande => demande?.bailleurId == userId)
         const demandeTotal = demandes?.length ?? 0
 
         // recuperation des candidatures non gerer
@@ -81,15 +79,7 @@ const getdataAcceuil = async(req,res)=>{
         data = {...data, demandes}
 
         // RECUPERATION DES VISITES
-
-        const visitesSnapsot = await db.collection("candidature")
-            .where(Filter.and(
-                Filter.where("bailleurId","==",userId),
-                Filter.where("type","==","visite")
-            ))
-            .orderBy("updatedAt","desc")
-            .get()
-        let visites = visitesSnapsot.docs.map(doc=>doc.data())
+        let visites = demandes?.filter(demande=> demande?.type == "visite")
 
         // jointune avec le locataire
         visites = visites.map(visite=>{
@@ -110,14 +100,9 @@ const getdataAcceuil = async(req,res)=>{
         data = {...data,visites}
 
         //RECUPERATION DES MESSAGES
-
-        const conversationSnapshot = await db.collection("conversation")
-            .where("bailleurId","==",userId)
-            .orderBy("updatedAt","desc")
-            .limit(5)
-            .get()
-        let conversations =conversationSnapshot.docs.map(doc=>doc.data())
-        
+        let conversations = [...conversationCache.cache.values()]
+        .sort((con1,con2)=> con2?.updatedAt?._seconds - con1?.updatedAt?._seconds)
+        .slice(5)
         conversations = conversations.map(conv=>{
             const autreUser = locataires.find(loc=>loc?.idPublic == conv?.locataireId)
             return {...conv,autreUser}

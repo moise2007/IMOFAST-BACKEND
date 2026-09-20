@@ -24,7 +24,6 @@ class Cache{
                     this.autoSave()
                 },this.spaceTimeLine)
             }catch{
-                await fs.writeFile(this.pathFile,"[]","utf8");
                 this.cache=new Map();
             }
         }catch(err){

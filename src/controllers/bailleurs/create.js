@@ -8,6 +8,7 @@ const { CompletudeProfilBailleur } = require("../../services/notation/completude
 const { createSession } = require("../../services/cookies/cookie.service")
 const { OTPService } = require("../../services/opt.service")
 const { sendEmail } = require("../../services/mail.service")
+const { bailleursCache } = require("../../cache/bailleurs.cache")
 // l'inscription) avec le même code.
 const REPONSE_ERREUR_SERVEUR = {
     success: false,
@@ -213,6 +214,17 @@ const createBailleur = async(req,res)=>{
         let idUser = userdoc.id
         user = {...userdoc.data()};
 
+        // enregistrement dans le cache
+        const isSave = bailleursCache.setItem(user?.idPublic,user)
+        if(!isSave.success){
+            return res.status(400).json({
+                success: false,
+                msg: "l'utilisateur a ete cree mais n'est pas dans le cache",
+                redirect: false,
+                path: null
+            })
+        }
+
         const successCreateSession = await createSession(res,idUser,"bailleur",req)
         if(!successCreateSession){
             return res.status(400).json({
@@ -233,9 +245,6 @@ const createBailleur = async(req,res)=>{
 
         // envoie du code
         const sendEmail = await sendCode(email,true);
-        
-
-        console.log("bailleur crée : "+userdoc.id)
         return res.status(200).json({
             success: true,
             msg:"utilisateur a été crée avec success",

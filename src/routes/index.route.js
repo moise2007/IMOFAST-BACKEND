@@ -80,7 +80,7 @@ const middlewareUploads = uploadMedia.fields([
     {name: "cni",maxCount: 2},
     {name: "imageAncienContrat", maxCount: 5},
     {name: "photoProfil",maxCount: 1},
-    {name: "imageAnnonce",maxCount: 6},
+    {name: "imageAnnonce",maxCount: 15},
     {name: "videoAnnonce",maxCount: 3},
     {name: "audioMessage",maxCount: 1},
     {name: "videoMessage",maxCount: 1},

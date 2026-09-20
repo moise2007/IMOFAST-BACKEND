@@ -1,9 +1,5 @@
-const {
-  createMailTransport,
-  CONTACT_RECIPIENT,
-  getMailConfig,
-} = require("../config/mail.config");
-
+const { CONTACT_RECIPIENT} = require("../config/mail.config");
+const { resend } = require("../config/mail.config");
 function escapeHtml(str = "") {
   return String(str)
     .replace(/&/g, "&amp;")
@@ -78,21 +74,27 @@ function buildContactEmailHtml({ nom, email, sujet, message }) {
 }
 
 async function sendContactEmail({ nom, email, sujet, message }) {
-  const { user } = getMailConfig();
-  const transport = createMailTransport();
-
-  const mailOptions = {
-    from: `"ImoFast Contact" <${user}>`,
-    to: CONTACT_RECIPIENT,
-    replyTo: `"${nom}" <${email}>`,
-    subject: `[ImoFast Contact] ${sujet}`,
-    html: buildContactEmailHtml({ nom, email, sujet, message }),
-    text: `Nom: ${nom}\nEmail: ${email}\nSujet: ${sujet}\n\nMessage:\n${message}`,
-  };
-
-  const info = await transport.sendMail(mailOptions);
-  console.log(`[Contact] Email envoyé → ${CONTACT_RECIPIENT} (id: ${info.messageId})`);
-  return info;
+  try{
+    const {data,error}= await resend.emails.send({
+      from: `${nom} <${email}> client d'imofast`,
+      to: ["bakomenm@gmail.com"],
+      subject: sujet,
+      html: buildContactEmailHtml({ nom, email, sujet, message }),
+    })
+    console.log("ok")
+    // verification d'une erreur
+    if(error){
+      console.log(error)
+      throw new Error("")
+    }
+    
+    // confirmation de l'envoie
+    return {success: true, msg: "mail envoyé"}
+  }
+  catch(err){
+    return {success: false, msg: "une erreur inconnu est survenue"}
+  }
+  
 }
 
 module.exports = { sendContactEmail, CONTACT_RECIPIENT };
