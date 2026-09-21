@@ -215,15 +215,7 @@ const createBailleur = async(req,res)=>{
         user = {...userdoc.data()};
 
         // enregistrement dans le cache
-        const isSave = bailleursCache.setItem(user?.idPublic,user)
-        if(!isSave.success){
-            return res.status(400).json({
-                success: true,
-                msg: "l'utilisateur a ete cree mais n'est pas dans le cache",
-                redirect: false,
-                path: null
-            })
-        }
+        -bailleursCache.setItem(user?.idPublic,user)
 
         const successCreateSession = await createSession(res,idUser,"bailleur",req)
         if(!successCreateSession){
