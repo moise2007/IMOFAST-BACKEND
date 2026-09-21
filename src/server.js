@@ -7,6 +7,8 @@ const { Users } = require("./services/auto/usersGetting")
 const { demarrerAutoAnnonce } = require("./services/auto/authAnnonce")
 const { initSocket } = require("./config/socket.io")
 const { initCache, makeMigration } = require("./cache/cache.index")
+
+const {db} = require("./config/firebase")
 // chargement de firebase
 require("./config/firebase")
 
@@ -48,6 +50,8 @@ async function startServer(){
         await initCache()
         await makeMigration()
         console.log("tous est pret")
+
+        
     }catch(err){
         console.error(err)
     }

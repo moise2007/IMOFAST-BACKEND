@@ -118,7 +118,7 @@ const createBailleur = async(req,res)=>{
         const orFilters = [];
 
         if(telephone){
-            telephone = telephone?.startsWith("+237") ? telephone : `+237${telephone}`
+            telephone = telephone?.startsWith("+237") ? telephone : telephone?.startsWith("237") ? `+${telephone}` : `+237${telephone}`
         }
             
         if (email) {
@@ -218,7 +218,7 @@ const createBailleur = async(req,res)=>{
         const isSave = bailleursCache.setItem(user?.idPublic,user)
         if(!isSave.success){
             return res.status(400).json({
-                success: false,
+                success: true,
                 msg: "l'utilisateur a ete cree mais n'est pas dans le cache",
                 redirect: false,
                 path: null

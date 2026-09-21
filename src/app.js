@@ -29,12 +29,7 @@ app.use(helmet({
 app.use(cors({
     origin: function(origin, callback) {
             const allowed = process.env.ALLOWED_ORIGINS?.split(",").map(s => s.trim()).filter(Boolean) ?? []
-            const localPatterns = [
-                /^http:\/\/localhost(:\d+)?$/,
-                /^http:\/\/127\.0\.0\.1(:\d+)?$/,
-                /^http:\/\/172\.\d{1,3}\.\d{1,3}\.\d{1,3}(:\d+)?$/,
-                /^http:\/\/192\.168\.\d{1,3}\.\d{1,3}(:\d+)?$/,
-            ]
+            const localPatterns = [/^http:\/\/localhost(:\d+)?$/]
             if (!origin || allowed.includes(origin) || localPatterns.some(p => p.test(origin))) {
                 callback(null, true)
             } else {
