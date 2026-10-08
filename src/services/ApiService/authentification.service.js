@@ -342,7 +342,7 @@ const sendOtp = async ({ identifiant }) => {
             ? identifiant.trim().toLowerCase()
             : normalizeTelephone(identifiant);
 
-    const code = (new OTPService()).generateOTP(normalizedIdentifier)
+    const code = (new OTPService()).generateOTP(normalizedIdentifier).code
 
     /*
      * Envoi email.
