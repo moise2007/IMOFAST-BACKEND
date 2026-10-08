@@ -89,7 +89,7 @@ const sendEmail= async(email,code=null,html=null, title=null)=>{
       if(error){
         throw new Error("")
       }
-      
+      console.log("code envoyé")
       // confirmation de l'envoie
       return {success: true, msg: "mail envoyé"}
     }

@@ -5,7 +5,7 @@ const annonceRepository = require("../../repositories/annonce.repository");
 
 const { formaterObjet } = require("../../utils/formaterObjet");
 const { createMetaDataAnnonce } = require("../../utils/createMetaDataAnnonce");
-const { Annonce } = require("../../models/Annonce");
+const { Annonce } = require("../../models/annonce");
 
 /**
  * Crée une nouvelle annonce pour un bailleur.
