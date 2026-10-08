@@ -9,7 +9,7 @@ const { FieldValue } = admin.firestore;
  * @returns {FirebaseFirestore.CollectionReference}
  */
 const getCollection = () => {
-    return db.collection("locataires");
+    return db.collection("locataire");
 };
 
 /**

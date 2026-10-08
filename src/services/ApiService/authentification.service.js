@@ -56,7 +56,7 @@ const register = async (data) => {
         idToken,
     } = data;
 
-    let uid = null
+    let uid = null, emailVerifie = false
 
     if (!ROLES_AUTORISES.includes(role)) {
         throw new AppError("Rôle utilisateur invalide.");
@@ -70,7 +70,8 @@ const register = async (data) => {
         telephone = googledata.telephone
         nom = googledata.nom
         prenom = googledata.prenom
-        uid = googledata.uid
+        uid = googledata.uidGoogle
+        emailVerifie = googledata.emailVerifie
     }
     else{
         const passwordValid = validatorPassword(password)
@@ -123,16 +124,19 @@ const register = async (data) => {
         hashedPassword = await bcrypt.hash(password, 12);
     }
 
+    console.log(emailVerifie)
     const userData = authentificationModel.createUser({
         role,
         nom,
         prenom,
         email: normalizedEmail,
         telephone: normalizedTelephone,
-        emailVerifie: Boolean(uid),
+        emailVerifie: emailVerifie,
         password: hashedPassword,
         uidGoogle: uid,
     });
+
+    console.log(userData)
 
     
 

@@ -12,8 +12,6 @@ const { setCookieSession } = require("../utils/session");
  */
 const register = async (req, res) => {
     const result = await authentificationService.register(req.body);
-
-    console.log(req.body)
     // creation des cookies
     setCookieSession(res,result?.sessionId,req.body.role)
 

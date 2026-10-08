@@ -13,6 +13,8 @@
  * - contenir de logique métier.
  */
 
+const AppError = require("../errors/AppError");
+
 /**
  * Rôles autorisés dans l'application.
  *
@@ -33,6 +35,20 @@ const isNonEmptyString = (value) => {
     return (
         typeof value === "string" &&
         value.trim().length > 0
+    );
+};
+
+/**
+ * Vérifie qu'une valeur a deux caractere au moins lorsqu'elle n'est pas optionnel
+ *
+ * @param {*} value
+ * @returns {boolean}
+ */
+const isOptionnalString = (value) => {
+    return (
+        value == null 
+        ? true
+        : typeof value === "string"  && (value.trim().length > 2 || value.trim().length == 0)
     );
 };
 
@@ -140,7 +156,7 @@ const isObject = (value) => {
  *
  * @param {Object} body
  * @returns {Object}
- * @throws {Error}
+ * @throws {AppError}
  */
 const registerSchema = (body = {}) => {
     const {
@@ -153,25 +169,25 @@ const registerSchema = (body = {}) => {
     } = body;
 
     if (!isValidRole(role)) {
-        throw new Error(
+        throw new AppError(
             "Le rôle doit être 'bailleur' ou 'locataire'."
         );
     }
 
     if (!isNonEmptyString(nom)) {
-        throw new Error(
+        throw new AppError(
             "Le nom est obligatoire."
         );
     }
 
-    if (!isNonEmptyString(prenom)) {
-        throw new Error(
+    if (!isOptionnalString(prenom)) {
+        throw new AppError(
             "Le prénom est obligatoire."
         );
     }
 
     if (!email && !telephone) {
-        throw new Error(
+        throw new AppError(
             "Un email ou un numéro de téléphone est obligatoire."
         );
     }
@@ -181,7 +197,7 @@ const registerSchema = (body = {}) => {
         email !== null &&
         !isValidEmail(email)
     ) {
-        throw new Error(
+        throw new AppError(
             "L'adresse email est invalide."
         );
     }
@@ -191,7 +207,7 @@ const registerSchema = (body = {}) => {
         telephone !== null &&
         !isValidTelephone(telephone)
     ) {
-        throw new Error(
+        throw new AppError(
             "Le numéro de téléphone est invalide."
         );
     }
@@ -201,7 +217,7 @@ const registerSchema = (body = {}) => {
         password !== null &&
         !isValidPassword(password)
     ) {
-        throw new Error(
+        throw new AppError(
             "Le mot de passe doit contenir au moins 8 caractères."
         );
     }
@@ -214,7 +230,7 @@ const registerSchema = (body = {}) => {
  *
  * @param {Object} body
  * @returns {Object}
- * @throws {Error}
+ * @throws {AppError}
  */
 const loginSchema = (body = {}) => {
     const {
@@ -224,19 +240,19 @@ const loginSchema = (body = {}) => {
     } = body;
 
     if (!isValidRole(role)) {
-        throw new Error(
+        throw new AppError(
             "Le rôle doit être 'bailleur' ou 'locataire'."
         );
     }
 
     if (!isValidIdentifier(identifiant)) {
-        throw new Error(
+        throw new AppError(
             "L'identifiant doit être un email ou un numéro de téléphone valide."
         );
     }
 
     if (!isNonEmptyString(password)) {
-        throw new Error(
+        throw new AppError(
             "Le mot de passe est obligatoire."
         );
     }
@@ -249,7 +265,7 @@ const loginSchema = (body = {}) => {
  *
  * @param {Object} body
  * @returns {Object}
- * @throws {Error}
+ * @throws {AppError}
  */
 const googleAuthSchema = (body = {}) => {
     const {
@@ -258,13 +274,13 @@ const googleAuthSchema = (body = {}) => {
     } = body;
 
     if (!isNonEmptyString(idToken)) {
-        throw new Error(
+        throw new AppError(
             "Le token Google est obligatoire."
         );
     }
 
     if (!isValidRole(role)) {
-        throw new Error(
+        throw new AppError(
             "Le rôle doit être 'bailleur' ou 'locataire'."
         );
     }
@@ -277,7 +293,7 @@ const googleAuthSchema = (body = {}) => {
  *
  * @param {Object} body
  * @returns {Object}
- * @throws {Error}
+ * @throws {AppError}
  */
 const sendOtpSchema = (body = {}) => {
     const {
@@ -285,7 +301,7 @@ const sendOtpSchema = (body = {}) => {
     } = body;
 
     if (!isValidIdentifier(identifiant)) {
-        throw new Error(
+        throw new AppError(
             "Un email ou un numéro de téléphone valide est obligatoire."
         );
     }
@@ -298,7 +314,7 @@ const sendOtpSchema = (body = {}) => {
  *
  * @param {Object} body
  * @returns {Object}
- * @throws {Error}
+ * @throws {AppError}
  */
 const verifyOtpSchema = (body = {}) => {
     const {
@@ -307,13 +323,13 @@ const verifyOtpSchema = (body = {}) => {
     } = body;
 
     if (!isValidIdentifier(identifiant)) {
-        throw new Error(
+        throw new AppError(
             "Un email ou un numéro de téléphone valide est obligatoire."
         );
     }
 
     if (!isValidOtp(code)) {
-        throw new Error(
+        throw new AppError(
             "Le code OTP doit contenir exactement 6 chiffres."
         );
     }
@@ -326,7 +342,7 @@ const verifyOtpSchema = (body = {}) => {
  *
  * @param {Object} body
  * @returns {Object}
- * @throws {Error}
+ * @throws {AppError}
  */
 const verifyEmailSchema = (body = {}) => {
     const {
@@ -336,13 +352,13 @@ const verifyEmailSchema = (body = {}) => {
     } = body;
 
     if (!isValidEmail(email)) {
-        throw new Error(
+        throw new AppError(
             "L'adresse email est invalide."
         );
     }
 
     if (!isValidOtp(code)) {
-        throw new Error(
+        throw new AppError(
             "Le code OTP doit contenir exactement 6 chiffres."
         );
     }
@@ -351,7 +367,7 @@ const verifyEmailSchema = (body = {}) => {
         role !== undefined &&
         !isValidRole(role)
     ) {
-        throw new Error(
+        throw new AppError(
             "Le rôle doit être 'bailleur' ou 'locataire'."
         );
     }
@@ -364,7 +380,7 @@ const verifyEmailSchema = (body = {}) => {
  *
  * @param {Object} body
  * @returns {Object}
- * @throws {Error}
+ * @throws {AppError}
  */
 const verifyTelephoneSchema = (body = {}) => {
     const {
@@ -373,13 +389,13 @@ const verifyTelephoneSchema = (body = {}) => {
     } = body;
 
     if (!isNonEmptyString(idToken)) {
-        throw new Error(
+        throw new AppError(
             "Le token de vérification du téléphone est obligatoire."
         );
     }
 
     if (!isValidRole(role)) {
-        throw new Error(
+        throw new AppError(
             "Le rôle doit être 'bailleur' ou 'locataire'."
         );
     }
@@ -394,7 +410,7 @@ const verifyTelephoneSchema = (body = {}) => {
  *
  * @param {Object} body
  * @returns {Object}
- * @throws {Error}
+ * @throws {AppError}
  */
 const updateIdentifierSchema = (body = {}) => {
     const {
@@ -405,7 +421,7 @@ const updateIdentifierSchema = (body = {}) => {
     } = body;
 
     if (!email && !telephone) {
-        throw new Error(
+        throw new AppError(
             "Un nouvel email ou un nouveau numéro de téléphone est obligatoire."
         );
     }
@@ -415,7 +431,7 @@ const updateIdentifierSchema = (body = {}) => {
         email !== null &&
         !isValidEmail(email)
     ) {
-        throw new Error(
+        throw new AppError(
             "La nouvelle adresse email est invalide."
         );
     }
@@ -425,7 +441,7 @@ const updateIdentifierSchema = (body = {}) => {
         telephone !== null &&
         !isValidTelephone(telephone)
     ) {
-        throw new Error(
+        throw new AppError(
             "Le nouveau numéro de téléphone est invalide."
         );
     }
@@ -435,7 +451,7 @@ const updateIdentifierSchema = (body = {}) => {
         lastEmail !== null &&
         !isValidEmail(lastEmail)
     ) {
-        throw new Error(
+        throw new AppError(
             "L'ancien email est invalide."
         );
     }
@@ -445,7 +461,7 @@ const updateIdentifierSchema = (body = {}) => {
         lastTelephone !== null &&
         !isValidTelephone(lastTelephone)
     ) {
-        throw new Error(
+        throw new AppError(
             "L'ancien numéro de téléphone est invalide."
         );
     }
@@ -465,7 +481,7 @@ const updateIdentifierSchema = (body = {}) => {
  *
  * @param {Object} body
  * @returns {Object}
- * @throws {Error}
+ * @throws {AppError}
  */
 const updatePasswordSchema = (body = {}) => {
     const {
@@ -478,7 +494,7 @@ const updatePasswordSchema = (body = {}) => {
         newPassword || password;
 
     if (!isValidPassword(passwordToValidate)) {
-        throw new Error(
+        throw new AppError(
             "Le nouveau mot de passe doit contenir au moins 8 caractères."
         );
     }
@@ -487,7 +503,7 @@ const updatePasswordSchema = (body = {}) => {
         currentPassword !== undefined &&
         !isNonEmptyString(currentPassword)
     ) {
-        throw new Error(
+        throw new AppError(
             "Le mot de passe actuel est obligatoire."
         );
     }
@@ -500,7 +516,7 @@ const updatePasswordSchema = (body = {}) => {
  *
  * @param {Object} body
  * @returns {Object}
- * @throws {Error}
+ * @throws {AppError}
  */
 const forgotPasswordSchema = (body = {}) => {
     const {
@@ -509,13 +525,13 @@ const forgotPasswordSchema = (body = {}) => {
     } = body;
 
     if (!isValidIdentifier(identifiant)) {
-        throw new Error(
+        throw new AppError(
             "L'identifiant doit être un email ou un numéro de téléphone valide."
         );
     }
 
     if (!isValidRole(role)) {
-        throw new Error(
+        throw new AppError(
             "Le rôle doit être 'bailleur' ou 'locataire'."
         );
     }
@@ -536,7 +552,7 @@ const validate = (schema) => {
     return (req, res, next) => {
         try {
             if (!isObject(req.body)) {
-                throw new Error(
+                throw new AppError(
                     "Les données envoyées sont invalides."
                 );
             }
@@ -544,10 +560,10 @@ const validate = (schema) => {
             schema(req.body);
 
             next();
-        } catch (error) {
+        } catch (AppError) {
             return res.status(400).json({
                 success: false,
-                message: error.message,
+                message: AppError.message,
             });
         }
     };

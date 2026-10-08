@@ -70,16 +70,6 @@ async function verifyGoogleTokenAuth(idToken) {
     }
 
     const userRecord = await auth.getUser(decodedToken.uid);
-
-    console.log({
-        uidGoogle: decodedToken.uid,
-        email: decodedToken.email || null,
-        emailVerifie: decodedToken.email_verified === true,
-        nom: userRecord.displayName.split(" ").length > 1 ? userRecord.displayName.split(" ")[1] : null || null,
-        prenom: userRecord.displayName.split(" ")[0] || null,
-        photoProfil: decodedToken.picture || null,
-        telephone: decodedToken.phone_number || null
-      })
     return {
       success: true,
       user: {

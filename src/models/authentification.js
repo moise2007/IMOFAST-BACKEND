@@ -50,10 +50,8 @@ const createUser = ({
         password,
         uidGoogle,
 
-        verification: {
-            emailVerifie,
-            telephoneVerifie,
-        },
+        emailVerifie,
+        telephoneVerifie,
 
         profil: {
             complet: false,

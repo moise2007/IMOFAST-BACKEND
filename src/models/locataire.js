@@ -8,6 +8,7 @@ class Locataire {
     dateNaissance=null,
     preferences=null,
     email=null,
+    adresse=null,
     password=null,
     telephone=null,
     uidGoogle=null,
@@ -25,6 +26,7 @@ class Locataire {
     this.prenom = prenom ?? "";
     this.sexe = sexe ?? null
     this.devise = devise;
+    this.adresse = adresse
     this.langue = langue;
     this.photoProfil = photoProfil;
     this.dateNaissance = dateNaissance ?? "";
@@ -50,6 +52,7 @@ class Locataire {
       prenom: this.prenom,
       dateNaissance: this.dateNaissance,
       photoProfil: this.photoProfil,
+      adresse: this.adresse,
       preferences: this.preferences,
       email: this.email,
       telephone: this.telephone,

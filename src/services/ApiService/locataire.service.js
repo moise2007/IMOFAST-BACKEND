@@ -1,5 +1,5 @@
 const bcrypt = require("bcrypt");
-
+const  AppError  = require("../../errors/AppError")
 const locataireRepository = require("../../repositories/locataire.repository");
 const { normalizeTelephone } = require("../../utils/telephone");
 
@@ -11,21 +11,16 @@ const { normalizeTelephone } = require("../../utils/telephone");
  * @returns {Promise<Object>}
  */
 const getDataLocataire = async (user) => {
-    const locataireId = user.id || user.userId;
+    const locataireId = user.id ;
 
     if (!locataireId) {
-        throw new Error(
-            "Impossible d'identifier le locataire."
-        );
+        throw new AppError( "Impossible d'identifier le locataire.",404);
     }
 
-    const locataire =
-        await locataireRepository.findById(
-            locataireId
-        );
+    const locataire = await locataireRepository.findById( locataireId );
 
     if (!locataire) {
-        throw new Error(
+        throw new AppError(
             "Locataire introuvable."
         );
     }
@@ -92,7 +87,9 @@ const updateLocataire = async (user, data) => {
         "nom",
         "prenom",
         "sexe",
+        "adresse",
         "langue",
+        "preferences",
         "autreNumero",
         "profession",
         "dateNaissance",
