@@ -24,8 +24,8 @@ class Bailleur{
         completudeProfilPourcentage,
     }){
         this.nom = nom 
-        this.nomAgence = nomAgence
-        this.typeProfil = typeProfil
+        this.nomAgence = nomAgence ?? null
+        this.typeProfil = typeProfil ?? "bailleur"
         this.prenom = prenom ?? ""
         this.email = email ?? ""
         this.autreNumero = autreNumero ?? null
@@ -81,6 +81,8 @@ class Bailleur{
                 cniVerifie: false,
                 cniVerifieAt: null,
                 estDigne: false,
+                isVerified: false,
+                isCertified: false,
             },
             score:{
                 global: 40,

@@ -1,31 +1,83 @@
 const express = require("express");
-const { body } = require("express-validator");
-const { validate } = require("../middlewares/validate.middleware");
-const { sendContact } = require("../controllers/contact/sendContact");
-const { limitAuth } = require("../middlewares/rateLimit");
 
-const contactRules = [
-  body("nom")
-    .trim()
-    .notEmpty().withMessage("Le nom est requis")
-    .isLength({ min: 2, max: 80 }).withMessage("Le nom doit contenir entre 2 et 80 caractères"),
-  body("email")
-    .trim()
-    .notEmpty().withMessage("L'email est requis")
-    .isEmail().withMessage("Email invalide")
-    .normalizeEmail(),
-  body("sujet")
-    .trim()
-    .notEmpty().withMessage("Le sujet est requis")
-    .isLength({ min: 3, max: 120 }).withMessage("Le sujet doit contenir entre 3 et 120 caractères"),
-  body("message")
-    .trim()
-    .notEmpty().withMessage("Le message est requis")
-    .isLength({ min: 10, max: 2000 }).withMessage("Le message doit contenir entre 10 et 2000 caractères"),
-];
+const {
+  authAdmin,
+} = require("../middlewares/auth");
+
+const {
+  limitAuth,
+} = require("../middlewares/rateLimit");
+
+const {
+  validate,
+  createContactSchema,
+  contactIdSchema,
+  getContactsSchema,
+  updateContactStatusSchema,
+  replyContactSchema,
+} = require("../validators/contact.validator");
+
+const {
+  createContact,
+  getContacts,
+  updateContactStatus,
+  replyToContact,
+} = require("../controllers/contact.controller");
 
 const routerContact = express.Router();
 
-routerContact.post("/", limitAuth, contactRules, validate, sendContact);
+/**
+ * POST /contacts
+ *
+ * Permet à un utilisateur d'envoyer un message
+ * depuis le formulaire de contact.
+ */
+routerContact.post(
+  "/",
+  limitAuth,
+  validate(createContactSchema),
+  createContact
+);
 
-module.exports = { routerContact };
+/**
+ * GET /contacts
+ *
+ * Réservé à l'administration.
+ */
+routerContact.get(
+  "/",
+  authAdmin,
+  validate(getContactsSchema, "query"),
+  getContacts
+);
+
+/**
+ * PATCH /contacts/:id/status
+ *
+ * Modifie le statut d'un contact.
+ */
+routerContact.patch(
+  "/:id/status",
+  authAdmin,
+  validate(contactIdSchema, "params"),
+  validate(updateContactStatusSchema),
+  updateContactStatus
+);
+
+/**
+ * POST /contacts/:id/reply
+ *
+ * Permet à un administrateur de répondre
+ * à l'adresse email enregistrée sur le contact.
+ */
+routerContact.post(
+  "/:id/reply",
+  authAdmin,
+  validate(contactIdSchema, "params"),
+  validate(replyContactSchema),
+  replyToContact
+);
+
+module.exports = {
+  routerContact,
+};

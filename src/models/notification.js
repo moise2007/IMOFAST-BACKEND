@@ -1,57 +1,78 @@
-const { admin } = require("../config/firebase")
-const timestamp = admin.firestore.Timestamp
+const { admin } = require("../config/firebase");
+
+const Timestamp = admin.firestore.Timestamp;
+
+/**
+ * Représente une notification envoyée à un utilisateur.
+ */
 class Notification {
-    constructor({
-        destinataireId,
-        typeDestinataire,
-        type,
-        cibleId,
-        idPublic,
-        typeCible,
-        titre,
-        message,
-    }) {
-        this.destinataireId   = destinataireId
-        this.typeDestinataire = typeDestinataire
-        this.type             = type
-        this.cibleId          = cibleId
-        this.typeCible        = typeCible
-        this.titre            = titre
-        this.message          = message
-        this.idPublic = idPublic
-    }
+  /**
+   * @param {Object} params
+   * @param {string} params.destinataireId
+   * @param {string} params.typeDestinataire
+   * @param {string} params.type
+   * @param {string} [params.cibleId]
+   * @param {string} [params.idPublic]
+   * @param {string} [params.typeCible]
+   * @param {string} [params.titre]
+   * @param {string} [params.message]
+   */
+  constructor({
+    destinataireId,
+    typeDestinataire,
+    type,
+    cibleId,
+    idPublic,
+    typeCible,
+    titre,
+    message,
+  }) {
+    this.idPublic = idPublic;
+    this.destinataireId = destinataireId;
+    this.typeDestinataire = typeDestinataire;
+    this.type = type;
+    this.cibleId = cibleId;
+    this.typeCible = typeCible;
+    this.titre = titre;
+    this.message = message;
+  }
 
-    toFirebase() {
-        return {
-            // Destinataire
-            destinataireId:   this.destinataireId,
-            typeDestinataire: this.typeDestinataire, // "bailleur" | "locataire"
-            idPublic: this.idPublic,
+  /**
+   * Transforme la notification en document Firestore.
+   *
+   * @returns {Object}
+   */
+  toFirebase() {
+    const now = Timestamp.now();
 
-            // Type
-            type: this.type,
-            // "nouvelle_candidature"
-            // "candidature_acceptee"
-            // "candidature_refusee"
-            // "nouveau_message"
-            // "nouveau_commentaire"
-            // "nouvelle_note"
+    return {
+      idPublic: this.idPublic,
 
-            // Cible
-            cibleId:   this.cibleId,   // id du bien, candidature, message...
-            typeCible: this.typeCible, // "bien" | "candidature" | "message" | "commentaire"
+      // Destinataire
+      destinataireId: this.destinataireId,
+      typeDestinataire: this.typeDestinataire,
 
-            // Contenu
-            titre:   this.titre   ?? "",
-            message: this.message ?? "",
+      // Type de notification
+      type: this.type,
 
-            // Statut
-            lu: false,
+      // Ressource concernée
+      cibleId: this.cibleId ?? null,
+      typeCible: this.typeCible ?? null,
 
-            // Dates
-            createdAt: timestamp.now(),
-        }
-    }
+      // Contenu
+      titre: this.titre ?? "",
+      message: this.message ?? "",
+
+      // Statut
+      lu: false,
+
+      // Dates
+      createdAt: now,
+      updatedAt: now,
+    };
+  }
 }
 
-module.exports = {Notification}
+module.exports = {
+  Notification,
+};

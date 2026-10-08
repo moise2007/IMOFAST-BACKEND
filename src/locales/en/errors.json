@@ -1,4 +1,5 @@
 {
+  "invalid_data": "The provided data is invalid.",
   "missing_fields": "Please specify: {{fields}}",
   "images": "images",
   "bailleurId": "landlord identifier",

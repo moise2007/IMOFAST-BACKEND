@@ -6,12 +6,18 @@ const { candidatureCache } = require("./candidature.cache");
 const { conversationCache } = require("./conversation.cache");
 const { locatairesCache } = require("./locataires.cache");
 const { messageCache } = require("./message.cache");
+const { bienListeCache } = require("./bien-liste.cache");
+const { bailleurDataCache } = require("./bailleur-data.cache");
+const { bailleurHomeCache } = require("./bailleur-home.cache");
 
 async function initCache(){
     await annonceCache.init()
     await messageCache.init()
     await conversationCache.init()
     await bienCache.init()
+    await bienListeCache.init()
+    await bailleurDataCache.init()
+    await bailleurHomeCache.init()
     await locatairesCache.init()
     await candidatureCache.init()
     await bailleursCache.init()
@@ -21,6 +27,9 @@ function autoSaveCache(){
     messageCache.autoSave()
     conversationCache.autoSave()
     bienCache.autoSave()
+    bienListeCache.autoSave()
+    bailleurDataCache.autoSave()
+    bailleurHomeCache.autoSave()
     locatairesCache.autoSave()
     candidatureCache.autoSave()
     bailleursCache.autoSave()
@@ -28,10 +37,10 @@ function autoSaveCache(){
 
 async function makeMigration(){
     // recuperation des locataires
-    const locatairesSnapshot = await db.collection("bailleur").get()
-    const locataires = locatairesSnapshot.docs.map(doc=> doc.data())
-    locataires.forEach(loc=>{
-        bailleursCache.setItem({id: loc.idPublic, data: loc})
+    const bailleursSnapshot = await db.collection("bailleur").get()
+    const bailleurs = bailleursSnapshot.docs.map(doc=> doc.data())
+    bailleurs.forEach(bailleur=>{
+        if(bailleur?.idPublic)bailleursCache.setItem({id: bailleur.idPublic, data: bailleur})
     })
 }
 

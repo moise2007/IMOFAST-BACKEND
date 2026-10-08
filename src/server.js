@@ -6,7 +6,7 @@ const { Currency } = require("./services/auto/monnaie.auto")
 const { Users } = require("./services/auto/usersGetting")
 const { demarrerAutoAnnonce } = require("./services/auto/authAnnonce")
 const { initSocket } = require("./config/socket.io")
-const { initCache, makeMigration } = require("./cache/cache.index")
+const { initCache } = require("./cache/cache.index")
 
 const {db} = require("./config/firebase")
 // chargement de firebase
@@ -48,7 +48,6 @@ async function startServer(){
         await Users.getCacheContact()
         demarrerAutoAnnonce()
         await initCache()
-        await makeMigration()
         console.log("tous est pret")
 
         

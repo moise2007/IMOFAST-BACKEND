@@ -1,38 +1,51 @@
-const express = require("express")
-const { authAdminLocataire, authBailleurLocataireAdmin } = require("../middlewares/auth")
-const { createFavoris } = require("../controllers/favoris/createFavoris")
-const { deleteFavoris } = require("../controllers/favoris/deleteFavoris")
-const { getFavoris } = require("../controllers/favoris/getFavoris")
+const express = require("express");
 
-//creation du router
-const routerFavoris = express.Router()
+const {authLocataire,} = require("../middlewares/auth");
 
-/**
- * route de creation d'un favoris 
- * params : id(de l'annonce)
- * body : 
- * query : 
- */
-routerFavoris.post("/create/:id",authAdminLocataire,createFavoris)
+const favoriController = require("../controllers/favori.controller");
 
+const {
+  validate,
+  annonceIdSchema,
+  favoriIdSchema,
+  getFavorisSchema,
+} = require("../validators/favori.validator");
 
+const routerFavoris = express.Router();
 
 /**
- * route de suppression d'un favoris 
- * params : id(du favoris)
- * body : 
- * query : 
+ * Récupère les favoris du locataire.
+ *
+ * IMPORTANT :
+ * Cette route doit être déclarée avant `/:id`.
  */
-routerFavoris.delete("/delete/:id",authAdminLocataire,deleteFavoris)
-
-
+routerFavoris.get(
+  "/",
+  authLocataire,
+  validate(getFavorisSchema, "query"),
+  favoriController.getFavoris
+);
 
 /**
- * route de recuperation des favoris 
- * params : 
- * body : 
- * query : {page,limit}
+ * Ajoute une annonce aux favoris.
  */
-routerFavoris.get("/get",authBailleurLocataireAdmin,getFavoris)
+routerFavoris.post(
+  "/:id",
+  authLocataire,
+  validate(annonceIdSchema, "params"),
+  favoriController.createFavori
+);
 
-module.exports = {routerFavoris}
+/**
+ * Supprime un favori.
+ */
+routerFavoris.delete(
+  "/:id",
+  authLocataire,
+  validate(favoriIdSchema, "params"),
+  favoriController.deleteFavori
+);
+
+module.exports = {
+  routerFavoris,
+};

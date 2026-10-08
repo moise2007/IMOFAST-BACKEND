@@ -1,12 +1,42 @@
-const express = require("express")
-const { authBailleurLocataireAdmin } = require("../middlewares/auth")
-const { createDepot } = require("../controllers/paiement/createDepot")
-const { searchStatusPaiement } = require("../controllers/paiement/verifieReceive")
+const express = require("express");
 
-const routerPaiement = express.Router()
+const {
+    identifierUtilisateur,
+} = require("../middlewares/auth");
 
-routerPaiement.post("/create",authBailleurLocataireAdmin,createDepot)
+const {
+    createDepot,
+    searchStatusPaiement,
+} = require("../controllers/paiement.controller");
 
-routerPaiement.post("/check-status",authBailleurLocataireAdmin,searchStatusPaiement)
+const {
+    createDepotSchema,
+    searchStatusPaiementSchema,
+    validate,
+} = require("../validators/paiement.validator");
 
-module.exports = { routerPaiement }
+const routerPaiement = express.Router();
+
+/**
+ * Initialise un paiement.
+ */
+routerPaiement.post(
+    "/create",
+    identifierUtilisateur,
+    validate(createDepotSchema),
+    createDepot
+);
+
+/**
+ * Vérifie le statut d'un paiement.
+ */
+routerPaiement.post(
+    "/check-status",
+    identifierUtilisateur,
+    validate(searchStatusPaiementSchema),
+    searchStatusPaiement
+);
+
+module.exports = {
+    routerPaiement,
+};

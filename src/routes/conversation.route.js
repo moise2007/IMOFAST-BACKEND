@@ -1,73 +1,83 @@
-const express = require("express")
-const { authBailleurLocataireAdmin } = require("../middlewares/auth")
-const { createConversation } = require("../controllers/conversation/createConversation")
-const { deleteConversation } = require("../controllers/conversation/deleteConversation")
-const { getAllConversation } = require("../controllers/conversation/getAllConversation")
-const { getOneConversation } = require("../controllers/conversation/getAnConversation")
-const { setLuConversation } = require("../controllers/conversation/setLuConversation")
-const { getContact } = require("../controllers/conversation/getContact")
+const express = require("express");
 
-//creation du router
-const routerConversation = express.Router()
+const {
+  authBailleurLocataire,
+} = require("../middlewares/auth");
 
-/**
- * route de creation des conversations
- * params: {auteur1Id}
- * body: 
- * query : 
-*/
-routerConversation.post("/create/:auteur1Id",authBailleurLocataireAdmin,createConversation)
+const conversationController = require("../controllers/conversation.controller");
 
+const {
+  validate,
+  createConversationParamsSchema,
+  conversationIdSchema,
+  contactSearchSchema,
+} = require("../validators/conversation.validator");
+
+const routerConversation = express.Router();
 
 /**
- * route de suppression d'une conversation
- * params: id
- * body:
- * query
-*/
-routerConversation.delete('/delete/:id',authBailleurLocataireAdmin,deleteConversation)
-
-
-/**
- * route  de recuperation de tous les conversations
- * params: 
- * body:
- * query :{limit,page}
-*/
-routerConversation.get("/",authBailleurLocataireAdmin,getAllConversation)
-
-
-
-
+ * Recherche les contacts disponibles.
+ *
+ * Cette route doit être déclarée avant `/:id`.
+ */
+routerConversation.get(
+  "/contacts",
+  authBailleurLocataire,
+  validate(contactSearchSchema, "query"),
+  conversationController.getContacts
+);
 
 /**
- * route de marquer une conversation comme lu
- * params: id
- * body:
- * query
-*/
-
-routerConversation.patch("/set-lu/:id",authBailleurLocataireAdmin,setLuConversation)
-
-
-/**
- * route qui permet de recuperer les contacts
- * params: id
- * body:
- * query
-*/
-
-routerConversation.get("/get-contacts/",authBailleurLocataireAdmin,getContact)
-
-
+ * Crée ou réactive une conversation.
+ *
+ * @param {string} auteur1Id - Identifiant public de l'autre participant.
+ */
+routerConversation.post(
+  "/with/:auteur1Id",
+  authBailleurLocataire,
+  validate(createConversationParamsSchema, "params"),
+  conversationController.createConversation
+);
 
 /**
- * route de recuperation d'une conversation
- * params: id
- * body:
- * query
-*/
-routerConversation.get("/:id",authBailleurLocataireAdmin,getOneConversation)
+ * Récupère toutes les conversations de l'utilisateur connecté.
+ */
+routerConversation.get(
+  "/",
+  authBailleurLocataire,
+  conversationController.getConversations
+);
 
+/**
+ * Récupère une conversation précise.
+ */
+routerConversation.get(
+  "/:id",
+  authBailleurLocataire,
+  validate(conversationIdSchema, "params"),
+  conversationController.getConversation
+);
 
-module.exports = {routerConversation}
+/**
+ * Supprime logiquement une conversation pour l'utilisateur connecté.
+ */
+routerConversation.delete(
+  "/:id",
+  authBailleurLocataire,
+  validate(conversationIdSchema, "params"),
+  conversationController.deleteConversation
+);
+
+/**
+ * Marque une conversation comme lue.
+ */
+routerConversation.patch(
+  "/:id/read",
+  authBailleurLocataire,
+  validate(conversationIdSchema, "params"),
+  conversationController.markConversationAsRead
+);
+
+module.exports = {
+  routerConversation,
+};

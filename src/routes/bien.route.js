@@ -1,28 +1,74 @@
-const express = require("express")
-const {  authBailleurAdmin } = require("../middlewares/auth")
-const { createBienBailleur } = require("../controllers/bien/createBien")
-const { deleteBienBailleur } = require("../controllers/bien/deleteBien")
-const { getAllBien } = require("../controllers/bien/getallBiens")
-const { getDetailBien } = require("../controllers/bien/getDetailBien")
-const { updateBienBailleur } = require("../controllers/bien/updateBien")
+const express = require("express");
 
-//creation du router
-const routerBien = express.Router()
+const {
+  authAdminLocataire,
+  authBailleurLocataireAdmin,
+} = require("../middlewares/auth");
 
-// route de cration d'un bien
-routerBien.post("/create",authBailleurAdmin,createBienBailleur)
+const bienController = require("../controllers/bien.controller");
 
-//route de recuperation des annonces 
-routerBien.get("/",authBailleurAdmin,getAllBien)
+const {
+  validate,
+  createBienSchema,
+  getBiensSchema,
+  getBienSchema,
+  updateBienSchema,
+  deleteBienSchema,
+} = require("../validators/bien.validator");
 
-//router de recuperation d'un bien
-routerBien.get("/get-one/:id",getDetailBien)
+const routerBien = express.Router();
 
-//route de suppression d'une annonce
-routerBien.delete("/delete/:id",authBailleurAdmin,deleteBienBailleur)
+/**
+ * Créer un bien.
+ */
+routerBien.post(
+  "/",
+  authAdminLocataire,
+  validate(createBienSchema),
+  bienController.createBienBailleur
+);
 
-// route de modification du bien
-routerBien.put("/update/:id",authBailleurAdmin,updateBienBailleur)
+/**
+ * Récupérer la liste des biens.
+ */
+routerBien.get(
+  "/",
+  authBailleurLocataireAdmin,
+  validate(getBiensSchema, "query"),
+  bienController.getAllBien
+);
 
+/**
+ * Récupérer le détail d'un bien.
+ */
+routerBien.get(
+  "/:id",
+  authBailleurLocataireAdmin,
+  validate(getBienSchema, "params"),
+  bienController.getDetailBien
+);
 
-module.exports = {routerBien}
+/**
+ * Modifier un bien.
+ */
+routerBien.patch(
+  "/:id",
+  authBailleurLocataireAdmin,
+  validate(getBienSchema, "params"),
+  validate(updateBienSchema),
+  bienController.updateBienBailleur
+);
+
+/**
+ * Supprimer un bien.
+ */
+routerBien.delete(
+  "/:id",
+  authBailleurLocataireAdmin,
+  validate(deleteBienSchema, "params"),
+  bienController.deleteBienBailleur
+);
+
+module.exports = {
+  routerBien,
+};

@@ -63,6 +63,10 @@
     "twilio": "^6.1.0",
     "ua-parser-js": "^2.0.10",
     "web-push": "^3.6.7",
-    "xss": "^1.0.15"
+    "xss": "^1.0.15",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "wrangler": "^4.137.0"
   }
 }

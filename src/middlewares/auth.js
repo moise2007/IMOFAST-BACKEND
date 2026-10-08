@@ -23,7 +23,7 @@ const RESPONSES = {
     },
 }
 
-const ROLES_CONNUS = ["bailleur", "locataire"]
+const ROLES_CONNUS = ["bailleurs", "locataires"]
 
 
 
@@ -78,21 +78,16 @@ const createAuthMiddleware  = (role=[])=>async(req,res,next)=>{
       })
     }
 
+    req.sessionId = sessionId
+
     //recuperation de utilisateur
     const userId = sessionDoc.data().userId
-    if(!userId){
+    const role = sessionDoc.data().role
+    if(!userId || !role){
       return clearAndRespond(401,RESPONSES.sessionInvalide)
     }
-    let userDoc = null;
 
-    for(let ro of role){
-      userDoc = await db.collection(ro).doc(userId).get()
-      if(userDoc.exists){
-        req.role = ro
-        break
-      }
-    }
-    
+    const userDoc = await db.collection(role).doc(userId).get()
     if(!userDoc.exists){
       return clearAndRespond(401,RESPONSES.userIntrouvable)
     }

@@ -1,24 +1,71 @@
-const express = require("express")
-const { authBailleurAdmin } = require("../middlewares/auth")
-const { createbatiment } = require("../controllers/batiment/create.controller")
-const { deletebatiment } = require("../controllers/batiment/delete.controller")
-const { updatebatiment } = require("../controllers/batiment/update.controller")
-const { getBatiments } = require("../controllers/batiment/getBatiment.controller")
+const express = require("express");
 
-// creation du router
-const batimentRouter = express.Router()
+const {authBailleurLocataireAdmin,authBailleurAdmin} = require("../middlewares/auth");
 
-// route de creation d'un batiment
-batimentRouter.post("/create",authBailleurAdmin,createbatiment)
+const batimentController = require("../controllers/batiment.controller");
 
-// route de suppression d'un batiment
-batimentRouter.delete("/delete/:id",authBailleurAdmin, deletebatiment)
+const {
+  validate,
+  createBatimentSchema,
+  getBatimentsSchema,
+  getBatimentSchema,
+  updateBatimentSchema,
+  deleteBatimentSchema,
+} = require("../validators/batiment.validator");
 
-// route de modification d'un batiment
-batimentRouter.patch("/update/:id",authBailleurAdmin, updatebatiment)
+const routerBatiment = express.Router();
 
-// route de recuperation des batiments
-batimentRouter.get("/get",authBailleurAdmin,getBatiments)
+/**
+ * Créer un bâtiment.
+ */
+routerBatiment.post(
+  "/",
+  authBailleurAdmin,
+  validate(createBatimentSchema),
+  batimentController.createBatiment
+);
 
+/**
+ * Récupérer les bâtiments accessibles à l'utilisateur.
+ */
+routerBatiment.get(
+  "/",
+  authBailleurLocataireAdmin,
+  validate(getBatimentsSchema, "query"),
+  batimentController.getBatiments
+);
 
-module.exports = {batimentRouter}
+/**
+ * Récupérer un bâtiment.
+ */
+routerBatiment.get(
+  "/:id",
+  authBailleurLocataireAdmin,
+  validate(getBatimentSchema, "params"),
+  batimentController.getBatiment
+);
+
+/**
+ * Modifier un bâtiment.
+ */
+routerBatiment.patch(
+  "/:id",
+  authBailleurAdmin,
+  validate(getBatimentSchema, "params"),
+  validate(updateBatimentSchema),
+  batimentController.updateBatiment
+);
+
+/**
+ * Supprimer un bâtiment.
+ */
+routerBatiment.delete(
+  "/:id",
+  authBailleurAdmin,
+  validate(deleteBatimentSchema, "params"),
+  batimentController.deleteBatiment
+);
+
+module.exports = {
+  routerBatiment,
+};

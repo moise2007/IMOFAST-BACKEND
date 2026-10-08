@@ -1,83 +1,135 @@
-const express = require("express")
-const { authAdminLocataire, authBailleurAdmin, authBailleurLocataireAdmin } = require("../middlewares/auth")
-const { annulerCandidature } = require("../controllers/candidatures/annulerCandidature")
-const { acceptCandidature } = require("../controllers/candidatures/acceptcandidature")
-const { getDetailCandidature } = require("../controllers/candidatures/detailscandidature")
-const { refuserCandidature } = require("../controllers/candidatures/refusCandidature")
-const {createCandidature} = require("../controllers/candidatures/createCandidature")
-const { getAllCandidature } = require("../controllers/candidatures/getAllCandidatures")
-const { updateCandidature } = require("../controllers/candidatures/updateCandidature")
-const { deleteCandidature } = require("../controllers/candidatures/deleteCandidature")
-const { programmerCandidature } = require("../controllers/candidatures/reprogrammerCandidature")
-//creation du router
-const routerCandidature = express.Router()
+const express = require("express");
+
+const {
+  authAdminLocataire,
+  authBailleurAdmin,
+  authBailleurLocataireAdmin,
+} = require("../middlewares/auth");
+
+const candidatureController = require("../controllers/candidature.controller");
+
+const {
+  validate,
+  createCandidatureSchema,
+  getCandidaturesSchema,
+  getCandidatureSchema,
+  updateCandidatureSchema,
+  candidatureActionSchema,
+  programmerCandidatureSchema,
+} = require("../validators/candidature.validator");
+
+const routerCandidature = express.Router();
 
 /**
- * route de creation d'une candidature
- * params : 
- * body : {bailleurId, type,  message, visite, demande, bienId}
- * query : 
+ * Crée une nouvelle candidature.
+ *
+ * Accessible aux locataires et administrateurs.
  */
-routerCandidature.post("/create",authAdminLocataire,createCandidature)
+routerCandidature.post(
+  "/",
+  authAdminLocataire,
+  validate(createCandidatureSchema),
+  candidatureController.createCandidature
+);
 
 /**
- * route de annulation des candidatures
- * params : id(candidature)
- * body : 
- * query : 
+ * Récupère la liste des candidatures de l'utilisateur connecté.
+ *
+ * Accessible aux bailleurs, locataires et administrateurs.
  */
-routerCandidature.put("/set-annuler/:id",authBailleurLocataireAdmin,annulerCandidature)
+routerCandidature.get(
+  "/",
+  authBailleurLocataireAdmin,
+  validate(getCandidaturesSchema, "query"),
+  candidatureController.getCandidatures
+);
 
 /**
- * route de l'acceptation d'une candidature
- * params : id (candidature)
- * body : 
- * query : 
+ * Récupère le détail d'une candidature.
+ *
+ * Accessible aux bailleurs, locataires et administrateurs.
  */
-routerCandidature.put("/set-accept/:id",authBailleurAdmin,acceptCandidature)
-
+routerCandidature.get(
+  "/:id",
+  authBailleurLocataireAdmin,
+  validate(getCandidatureSchema, "params"),
+  candidatureController.getCandidature
+);
 
 /**
- * route de refuser la candidature
- * params : id (candidature)
- * body : 
- * query : 
+ * Accepte une candidature.
+ *
+ * Accessible aux bailleurs et administrateurs.
  */
-routerCandidature.put("/set-refus/:id",authBailleurAdmin,refuserCandidature)
-
+routerCandidature.put(
+  "/set-accept/:id",
+  authBailleurAdmin,
+  validate(candidatureActionSchema, "params"),
+  candidatureController.acceptCandidature
+);
 
 /**
- * route de refuser la candidature
- * params : id (candidature)
- * body : {time,date}
- * query : 
+ * Refuse une candidature.
+ *
+ * Accessible aux bailleurs et administrateurs.
  */
-routerCandidature.put("/set-newDate/:id",authBailleurAdmin,programmerCandidature)
-/**
- * route de chargement des details d'une candidature
- * params : id (candidature)
- * body : 
- * query : 
- */
-routerCandidature.get("/get/:id",authBailleurLocataireAdmin,getDetailCandidature)
+routerCandidature.put(
+  "/set-refus/:id",
+  authBailleurAdmin,
+  validate(candidatureActionSchema, "params"),
+  candidatureController.refuseCandidature
+);
 
 /**
- * route de creation d'une candidature
- * params : 
- * body : 
- * query : {bienId,type,statut,vu,maxDate,minDate,page,limit}
+ * Annule une candidature.
+ *
+ * Accessible aux bailleurs, locataires et administrateurs.
  */
-routerCandidature.get("/get",authBailleurLocataireAdmin, getAllCandidature)
+routerCandidature.put(
+  "/set-annuler/:id",
+  authBailleurLocataireAdmin,
+  validate(candidatureActionSchema, "params"),
+  candidatureController.cancelCandidature
+);
 
 /**
- * route de creation d'une candidature
- * params : id
- * body : {objet demande ou objet visite}
- * query : 
+ * Programme ou reprogramme une visite.
+ *
+ * Accessible aux bailleurs et administrateurs.
  */
-routerCandidature.patch("/update",authAdminLocataire,updateCandidature)
+routerCandidature.put(
+  "/set-newDate/:id",
+  authBailleurAdmin,
+  validate(candidatureActionSchema, "params"),
+  validate(programmerCandidatureSchema),
+  candidatureController.programmerCandidature
+);
 
+/**
+ * Modifie les informations d'une candidature.
+ *
+ * Accessible aux locataires et administrateurs.
+ */
+routerCandidature.patch(
+  "/:id",
+  authAdminLocataire,
+  validate(candidatureActionSchema, "params"),
+  validate(updateCandidatureSchema),
+  candidatureController.updateCandidature
+);
 
-routerCandidature.delete("/delete/:id",authBailleurLocataireAdmin,deleteCandidature)
+/**
+ * Supprime logiquement une candidature pour l'utilisateur connecté.
+ *
+ * Accessible aux bailleurs, locataires et administrateurs.
+ */
+routerCandidature.delete(
+  "/:id",
+  authBailleurLocataireAdmin,
+  validate(candidatureActionSchema, "params"),
+  candidatureController.deleteCandidature
+);
 
-module.exports = {routerCandidature}
+module.exports = {
+  routerCandidature,
+};

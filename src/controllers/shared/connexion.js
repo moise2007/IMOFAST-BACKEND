@@ -4,7 +4,7 @@ const { verifyGoogleToken } = require("../../services/verifyIdGoogle.service")
 const {Filter} = admin.firestore
 const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken")
-const { createSession } = require("../../services/cookies/cookie.service")
+const { createSession } = require("../../utils/session")
 const ROLES_AUTORISES = ["bailleur", "locataire"]
 
 

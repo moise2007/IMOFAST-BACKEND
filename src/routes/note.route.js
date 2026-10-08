@@ -1,48 +1,82 @@
-const express = require("express")
-const { authBailleurLocataireAdmin } = require("../middlewares/auth")
-const { createNote } = require("../controllers/note/createNote")
-const { deleteNote } = require("../controllers/note/deleteNote")
-const { updateNote } = require("../controllers/note/updateNote")
-const { getNote } = require("../controllers/note/getNotes")
+const express = require("express");
 
-//creation du router
-const routerNote = express.Router()
+const {
+  authBailleurLocataireAdmin,
+} = require("../middlewares/auth");
 
-/**
- * route de creation d'un note
- * params : 
- * body: {cibleId, typeCible, valeur,}
- * query: 
-*/
-routerNote.post("/create",authBailleurLocataireAdmin,createNote)
+const noteController = require("../controllers/note.controller");
 
+const {
+  validate,
+  createNoteSchema,
+  updateNoteSchema,
+  noteIdSchema,
+  getNotesSchema,
+} = require("../validators/note.validator");
 
-/**
- * route de suppression d'une note
- * params : id
- * body: 
- * query: 
-*/
-routerNote.delete("/:id",authBailleurLocataireAdmin,deleteNote)
-
+const routerNote = express.Router();
 
 /**
- * route modication d'une note
- * params : id
- * body: {valeur}
- * query: 
-*/
-routerNote.patch("/update/:id",authBailleurLocataireAdmin,updateNote)
-
+ * Créer une note.
+ *
+ * POST /notes
+ */
+routerNote.post(
+  "/",
+  authBailleurLocataireAdmin,
+  validate(createNoteSchema),
+  noteController.createNote
+);
 
 /**
- * route de recuperation d'une note
- * params : 
- * body: 
- * query: {cibleId, typeCible, valeur, idPublic, auteurId,min,max }
-*/
-routerNote.get("/",getNote)
+ * Récupérer les notes avec filtres.
+ *
+ * GET /notes
+ */
+routerNote.get(
+  "/",
+  authBailleurLocataireAdmin,
+  validate(getNotesSchema, "query"),
+  noteController.getNotes
+);
 
+/**
+ * Récupérer une note par son identifiant public.
+ *
+ * GET /notes/:id
+ */
+routerNote.get(
+  "/:id",
+  authBailleurLocataireAdmin,
+  validate(noteIdSchema, "params"),
+  noteController.getNote
+);
 
+/**
+ * Modifier une note.
+ *
+ * PATCH /notes/:id
+ */
+routerNote.patch(
+  "/:id",
+  authBailleurLocataireAdmin,
+  validate(noteIdSchema, "params"),
+  validate(updateNoteSchema),
+  noteController.updateNote
+);
 
-module.exports = {routerNote}
+/**
+ * Supprimer une note.
+ *
+ * DELETE /notes/:id
+ */
+routerNote.delete(
+  "/:id",
+  authBailleurLocataireAdmin,
+  validate(noteIdSchema, "params"),
+  noteController.deleteNote
+);
+
+module.exports = {
+  routerNote,
+};

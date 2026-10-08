@@ -1,55 +1,88 @@
-const express = require("express")
-const { authBailleurLocataireAdmin } = require("../middlewares/auth")
-const { createCommentaire } = require("../controllers/commentaires/createCommentaire")
-const { deleteCommentaire } = require("../controllers/commentaires/delete")
-const { getCommentaire } = require("../controllers/commentaires/getCommentaire")
-const { responseCommentaire } = require("../controllers/commentaires/repondre")
-const { updateCommentaire } = require("../controllers/commentaires/update")
+const express = require("express");
 
-//creation du router
-const routerCommentaire = express.Router()
+const {
+  authBailleurLocataireAdmin,
+} = require("../middlewares/auth");
 
-/**
- * router de creation d'un commentaire
- * params : 
- * body : cibleId, typeCible, message,
- * query : 
- */
-routerCommentaire.post("/create",authBailleurLocataireAdmin,createCommentaire)
+const commentaireController = require("../controllers/commentaire.controller");
 
-/**
- * router de suppression d'un commentaire
- * params : id(commentaire)
- * body :
- * query : 
- */
-routerCommentaire.delete("/delete/:id",authBailleurLocataireAdmin,deleteCommentaire)
+const {
+  validate,
+  createCommentaireSchema,
+  getCommentairesSchema,
+  getCommentairesParamsSchema,
+  updateCommentaireSchema,
+  commentaireIdSchema,
+  responseCommentaireSchema,
+} = require("../validators/commentaire.validator");
+
+const routerCommentaire = express.Router();
 
 /**
- * router de recuperation des commentaires
- * params : {col,id}
- * body :
- * query : { page}
+ * Créer un commentaire.
  */
-routerCommentaire.get("/:col/:id",getCommentaire)
+routerCommentaire.post(
+  "/",
+  authBailleurLocataireAdmin,
+  validate(createCommentaireSchema),
+  commentaireController.createCommentaire
+);
 
 /**
- * router de responses a un commentaire
- * params : id(commentaire)
- * body : {message,}
- * query : 
+ * Récupérer les commentaires d'une cible.
+ *
+ * Exemple :
+ * GET /commentaires/annonce/annonce_123
  */
-routerCommentaire.patch("/response/:id",authBailleurLocataireAdmin,responseCommentaire)
-
+routerCommentaire.get(
+  "/:col/:id",
+  authBailleurLocataireAdmin,
+  validate(getCommentairesParamsSchema, "params"),
+  validate(getCommentairesSchema, "query"),
+  commentaireController.getCommentaires
+);
 
 /**
- * router de modification d'un commentaire
- * params : 
- * body : {message}
- * query : 
+ * Modifier son commentaire.
+ *
+ * Exemple :
+ * PATCH /commentaires/commentaire_123
  */
-routerCommentaire.patch("/update",authBailleurLocataireAdmin,updateCommentaire)
+routerCommentaire.patch(
+  "/:id",
+  authBailleurLocataireAdmin,
+  validate(commentaireIdSchema, "params"),
+  validate(updateCommentaireSchema),
+  commentaireController.updateCommentaire
+);
 
+/**
+ * Supprimer son commentaire.
+ *
+ * Exemple :
+ * DELETE /commentaires/commentaire_123
+ */
+routerCommentaire.delete(
+  "/:id",
+  authBailleurLocataireAdmin,
+  validate(commentaireIdSchema, "params"),
+  commentaireController.deleteCommentaire
+);
 
+/**
+ * Répondre à un commentaire.
+ *
+ * Exemple :
+ * POST /commentaires/commentaire_123/reponses
+ */
+routerCommentaire.post(
+  "/:id/reponses",
+  authBailleurLocataireAdmin,
+  validate(commentaireIdSchema, "params"),
+  validate(responseCommentaireSchema),
+  commentaireController.respondToCommentaire
+);
 
-module.exports = {routerCommentaire}
+module.exports = {
+  routerCommentaire,
+};

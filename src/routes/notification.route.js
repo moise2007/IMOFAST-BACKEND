@@ -1,83 +1,79 @@
-const express = require("express")
-const { authBailleurLocataire, authBailleurLocataireAdmin } = require("../middlewares/auth")
-const { setLuNotification } = require("../controllers/notifications/setLuNotifications")
-const { setAllLuNotification } = require("../controllers/notifications/setAllLuNotifications")
-const { deleteNotification } = require("../controllers/notifications/deleteNotification")
-const { getNotification } = require("../controllers/notifications/getAllNotifications")
-const { createNotification } = require("../controllers/notifications/createNotification")
-const { db } = require("../config/firebase")
+const express = require("express");
 
-//creation du router
-const routerNotification = express.Router()
+const {
+  authBailleurLocataireAdmin,
+} = require("../middlewares/auth");
 
-routerNotification.post("/subcribe",authBailleurLocataireAdmin,async(req,res)=>{
-    try{
-        const subscription = req.body
+const notificationController = require("../controllers/notification.controller");
 
-        if (!subscription) {
-            return res.status(400).json({
-                success: false,
-                message: "notif-error",
-            });
-        }
+const {
+  validate,
+  createNotificationSchema,
+  notificationIdSchema,
+  getNotificationsSchema,
+} = require("../validators/notification.validator");
 
-        await db.collection(req.role).doc(req.user.id).update({
-            notificationData: subscription
-        })
-
-        return res.status(200).json({
-            success: true,
-            msg: "notif-activer"
-        })
-    }
-    catch(err){
-        console.log(err)
-        return res.status(500).json({
-            success: false,
-            msg: "notif-error"
-        })
-    }
-})
-/**
- * route de creation des notifications
- * params : 
- * body : { destinataireId, typeDestinataire, type, cibleId, typeCible, titre, message,}
- * query : 
-*/
-routerNotification.post("/create",authBailleurLocataireAdmin,createNotification)
+const routerNotification = express.Router();
 
 /**
- * route recuperation des notifications
- * params : 
- * body : 
- * query : 
-*/
-routerNotification.get("/",authBailleurLocataireAdmin,getNotification)
+ * Créer une notification.
+ *
+ * POST /notifications
+ */
+routerNotification.post(
+  "/",
+  authBailleurLocataireAdmin,
+  validate(createNotificationSchema),
+  notificationController.createNotification
+);
 
 /**
- * route de supression des notifications
- * params : Id
- * body : 
- * query : 
-*/
-routerNotification.delete("/delete/:id",authBailleurLocataireAdmin,deleteNotification)
+ * Récupérer les notifications du destinataire connecté.
+ *
+ * GET /notifications
+ */
+routerNotification.get(
+  "/",
+  authBailleurLocataireAdmin,
+  validate(getNotificationsSchema, "query"),
+  notificationController.getNotifications
+);
 
 /**
- * route qui  marque toutes les notfications comme lu
- * params : 
- * body : 
- * query : 
-*/
-routerNotification.patch("/set-as-all-read",authBailleurLocataireAdmin,setAllLuNotification)
+ * Marquer toutes les notifications comme lues.
+ *
+ * PATCH /notifications/read-all
+ */
+routerNotification.patch(
+  "/read-all",
+  authBailleurLocataireAdmin,
+  notificationController.setAllLuNotification
+);
 
 /**
- * route aui marque une notification comment lu
- * params : id
- * body : 
- * query : 
-*/
+ * Marquer une notification comme lue.
+ *
+ * PATCH /notifications/:id/read
+ */
+routerNotification.patch(
+  "/:id/read",
+  authBailleurLocataireAdmin,
+  validate(notificationIdSchema, "params"),
+  notificationController.setLuNotification
+);
 
-routerNotification.patch("/set-as-read/:id",authBailleurLocataireAdmin,setLuNotification)
+/**
+ * Supprimer une notification.
+ *
+ * DELETE /notifications/:id
+ */
+routerNotification.delete(
+  "/:id",
+  authBailleurLocataireAdmin,
+  validate(notificationIdSchema, "params"),
+  notificationController.deleteNotification
+);
 
-
-module.exports = {routerNotification}
+module.exports = {
+  routerNotification,
+};

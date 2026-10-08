@@ -1,7 +1,7 @@
 const { db, admin } = require("../../config/firebase")
 const { Filter } = admin.firestore
 const { Evenement } = require("../../models/agenda")
-const { formaterObjet } = require("../../services/clearData")
+const { formaterObjet } = require("../../utils/clearData")
 const { createId } = require("@paralleldrive/cuid2")
 
 const typesValides = ["visite", "signature", "remise_cles", "autre"]

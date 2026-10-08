@@ -1,44 +1,72 @@
-const express = require("express")
-const { authBailleurLocataireAdmin } = require("../middlewares/auth")
-const { createSignalement } = require("../controllers/signalements/createSignalement")
-const { updateSignalement } = require("../controllers/signalements/updateSignalement")
-const { deleteSignalement } = require("../controllers/signalements/deletesignalement")
-const { getSignalement } = require("../controllers/signalements/getSignalement")
+const express = require("express");
 
-//creation du router
+const {
+  authBailleurLocataireAdmin,
+} = require("../middlewares/auth");
 
-const routerSignalement = express.Router()
+const signalementController = require("../controllers/signalement.controller");
 
-/**
-* route de creation d'un signalement
-* body : {typeCible,idCible,raison,description}
-* query : 
-* params : 
-*/
-routerSignalement.post("/create",authBailleurLocataireAdmin,createSignalement)
+const {
+  validate,
+  createSignalementSchema,
+  signalementIdSchema,
+  getSignalementsSchema,
+  updateSignalementSchema,
+} = require("../validators/signalement.validator");
 
-/**
-* route de moficiation d'un signalement
-* body : {raison,description,cibleId }
-* query : 
-* params : id
-*/
-routerSignalement.patch("/update/:id",authBailleurLocataireAdmin,updateSignalement)
+const routerSignalement = express.Router();
 
 /**
-* route de suppression d'un signalement
-* body : cibleId 
-* query : 
-* params : id
-*/
-routerSignalement.delete("/delete/:id",authBailleurLocataireAdmin,deleteSignalement)
+ * Créer un signalement.
+ */
+routerSignalement.post(
+  "/",
+  authBailleurLocataireAdmin,
+  validate(createSignalementSchema),
+  signalementController.createSignalement
+);
 
 /**
-* route de recuperation des signalement
-* body : 
-* query : signalementId,raison,typeCible,cibleId,auteurId
-* params : 
-*/
-routerSignalement.get("/",authBailleurLocataireAdmin,getSignalement)
+ * Récupérer les signalements avec filtres.
+ */
+routerSignalement.get(
+  "/",
+  authBailleurLocataireAdmin,
+  validate(getSignalementsSchema, "query"),
+  signalementController.getSignalements
+);
 
-module.exports = {routerSignalement}
+/**
+ * Récupérer un signalement par son idPublic.
+ */
+routerSignalement.get(
+  "/:id",
+  authBailleurLocataireAdmin,
+  validate(signalementIdSchema, "params"),
+  signalementController.getSignalement
+);
+
+/**
+ * Modifier un signalement.
+ */
+routerSignalement.patch(
+  "/:id",
+  authBailleurLocataireAdmin,
+  validate(signalementIdSchema, "params"),
+  validate(updateSignalementSchema),
+  signalementController.updateSignalement
+);
+
+/**
+ * Supprimer un signalement.
+ */
+routerSignalement.delete(
+  "/:id",
+  authBailleurLocataireAdmin,
+  validate(signalementIdSchema, "params"),
+  signalementController.deleteSignalement
+);
+
+module.exports = {
+  routerSignalement,
+};

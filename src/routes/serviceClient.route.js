@@ -1,16 +1,67 @@
+const express = require("express");
 
-const express = require("express")
-const { identifierUtilisateur, authBailleurLocataireAdmin } = require("../middlewares/auth")
-const { sendMessageServiceClient } = require("../controllers/serviceClient/sendMessage")
-const { sendReclamationServiceClient } = require("../controllers/serviceClient/sendReclamation")
-const { sendSignalementServiceClient } = require("../controllers/serviceClient/sendSignalement")
-const { getDemandeServiceClient } = require("../controllers/serviceClient/getDemande")
+const {
+    identifierUtilisateur,
+    authBailleurLocataireAdmin,
+} = require("../middlewares/auth");
 
-const routerServiceClient = express.Router()
+const {
+    getDemandes,
+    createMessage,
+    createReclamation,
+    createSignalement,
+} = require("../controllers/service_client.controller");
 
-routerServiceClient.post("/sendMessage",identifierUtilisateur,sendMessageServiceClient)
-routerServiceClient.post("/sendReclamation",identifierUtilisateur,sendReclamationServiceClient)
-routerServiceClient.post("/sendSignalement",identifierUtilisateur,sendSignalementServiceClient)
-routerServiceClient.get("/getDemande",authBailleurLocataireAdmin,getDemandeServiceClient)
+const {
+    createMessageSchema,
+    createReclamationSchema,
+    createSignalementSchema,
+    getDemandeSchema,
+    validate,
+} = require("../validators/service_client.validator");
 
-module.exports = {routerServiceClient}
+const routerServiceClient = express.Router();
+
+/**
+ * Envoie un message au service client.
+ */
+routerServiceClient.post(
+    "/sendMessage",
+    identifierUtilisateur,
+    validate(createMessageSchema),
+    createMessage
+);
+
+/**
+ * Envoie une réclamation au service client.
+ */
+routerServiceClient.post(
+    "/sendReclamation",
+    identifierUtilisateur,
+    validate(createReclamationSchema),
+    createReclamation
+);
+
+/**
+ * Envoie un signalement au service client.
+ */
+routerServiceClient.post(
+    "/sendSignalement",
+    identifierUtilisateur,
+    validate(createSignalementSchema),
+    createSignalement
+);
+
+/**
+ * Récupère les demandes du client connecté.
+ */
+routerServiceClient.get(
+    "/getDemande",
+    authBailleurLocataireAdmin,
+    validate(getDemandeSchema, "query"),
+    getDemandes
+);
+
+module.exports = {
+    routerServiceClient,
+};

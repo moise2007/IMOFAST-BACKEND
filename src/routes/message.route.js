@@ -1,47 +1,65 @@
-const express = require("express")
-const { authBailleurLocataireAdmin } = require("../middlewares/auth")
-const { sendMessage } = require("../controllers/message/sendMessage")
-const { updateMessage } = require("../controllers/message/updateMessage")
-const { deleteMessage } = require("../controllers/message/deleteMessage")
-const { getMessage } = require("../controllers/message/getMessageConversation")
+const express = require("express");
 
-//creation du router
-const routerMessage = express.Router()
+const {
+  authBailleurLocataire,
+} = require("../middlewares/auth");
 
-/**
- * route de creation d'un message
- * params: 
- * query: 
- * body : {conversationId, type, contenu, medias, lien,}
-*/
+const messageController = require("../controllers/message.controller");
 
-routerMessage.post("/create",authBailleurLocataireAdmin,sendMessage)
+const {
+  validate,
+  messageIdSchema,
+  conversationIdSchema,
+  createMessageSchema,
+  updateMessageSchema,
+  getMessagesSchema,
+} = require("../validators/message.validator");
 
-/**
- * route de modification des messages
- * params: id
- * query: 
- * body : {conversationId, type, contenu,}
-*/
-routerMessage.patch("/update/:id",authBailleurLocataireAdmin,updateMessage)
-
+const routerMessage = express.Router();
 
 /**
- * route de suppresion des messages
- * params: id
- * query: 
- * body : {conversationId,}
-*/
-routerMessage.delete("/delete/:id",authBailleurLocataireAdmin,deleteMessage)
-
-
+ * Envoie un message.
+ */
+routerMessage.post(
+  "/",
+  authBailleurLocataire,
+  validate(createMessageSchema),
+  messageController.sendMessage
+);
 
 /**
- * route de recuperations des messages
- * params: id
- * query: {page,limit}
- * body : 
-*/
+ * Récupère les messages d'une conversation.
+ *
+ * Exemple :
+ * GET /conversations/cnv_123/messages
+ */
+routerMessage.get(
+  "/conversations/:id",
+  authBailleurLocataire,
+  validate(conversationIdSchema, "params"),
+  validate(getMessagesSchema, "query"),
+  messageController.getMessages
+);
 
-routerMessage.get("/:id",authBailleurLocataireAdmin,getMessage)
-module.exports = {routerMessage}
+/**
+ * Modifie un message.
+ */
+routerMessage.patch(
+  "/:id",
+  authBailleurLocataire,
+  validate(messageIdSchema, "params"),
+  validate(updateMessageSchema),
+  messageController.updateMessage
+);
+
+/**
+ * Supprime un message.
+ */
+routerMessage.delete(
+  "/:id",
+  authBailleurLocataire,
+  validate(messageIdSchema, "params"),
+  messageController.deleteMessage
+);
+
+module.exports = {routerMessage};

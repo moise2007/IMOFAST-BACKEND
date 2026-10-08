@@ -1,27 +1,80 @@
-const express = require("express")
-const { createAnnonceBailleur } = require("../controllers/annonce.js/createAnnonce")
-const { authBailleurAdmin, identifierUtilisateur } = require("../middlewares/auth")
-const { deleteAnnonceBailleur } = require("../controllers/annonce.js/deleteAnnonce")
-const { detailAnnonce } = require("../controllers/annonce.js/detailAnnoces")
-const { getAllAnnonce } = require("../controllers/annonce.js/getAllAnnonce")
-const { updateAnnonceBailleur } = require("../controllers/annonce.js/updateAnnonce")
+const express = require("express");
 
-//creation du router
-const routerAnnonce = express.Router()
+const {
+  authAdminLocataire,
+  authBailleurLocataireAdmin,
+} = require("../middlewares/auth");
 
-//route de creation d'une annonnce
-routerAnnonce.post("/create",authBailleurAdmin,createAnnonceBailleur)
+const annonceController = require("../controllers/annonce.controller");
 
-//route de suppression d'une annonce
-routerAnnonce.delete("/delete/:id",authBailleurAdmin,deleteAnnonceBailleur)
+const {
+  validate,
+  createAnnonceSchema,
+  getAnnoncesSchema,
+  getAnnonceSchema,
+  updateAnnonceSchema,
+  deleteAnnonceSchema,
+} = require("../validators/annonce.validator");
 
-//route de recuperation des details d'une annoce
-routerAnnonce.get("/:id",identifierUtilisateur,detailAnnonce)
+const routerAnnonce = express.Router();
 
-//route de recupetation des annonces
-routerAnnonce.get("/",identifierUtilisateur,getAllAnnonce)
+/**
+ * Création d'une annonce.
+ *
+ * Seul un bailleur doit pouvoir créer une annonce.
+ */
+routerAnnonce.post(
+  "/",
+  authBailleurLocataireAdmin,
+  validate(createAnnonceSchema),
+  annonceController.createAnnonceBailleur
+);
 
-//route de modification d'une annonce
-routerAnnonce.patch("/update/:id",authBailleurAdmin,updateAnnonceBailleur)
+/**
+ * Récupération de la liste des annonces.
+ *
+ * Les paramètres de recherche et de pagination sont
+ * validés depuis req.query.
+ */
+routerAnnonce.get(
+  "/",
+  authBailleurLocataireAdmin,
+  validate(getAnnoncesSchema, "query"),
+  annonceController.getAnnonces
+);
 
-module.exports = {routerAnnonce}
+/**
+ * Suppression d'une annonce.
+ */
+routerAnnonce.delete(
+  "/:id",
+  authBailleurLocataireAdmin,
+  validate(deleteAnnonceSchema, "params"),
+  annonceController.deleteAnnonceBailleur
+);
+
+/**
+ * Récupération d'une annonce.
+ */
+routerAnnonce.get(
+  "/:id",
+  authBailleurLocataireAdmin,
+  validate(getAnnonceSchema, "params"),
+  annonceController.getAnnonce
+);
+
+/**
+ * Modification d'une annonce.
+ *
+ * Les paramètres de l'URL et le body sont validés
+ * séparément.
+ */
+routerAnnonce.patch(
+  "/:id",
+  authBailleurLocataireAdmin,
+  validate(getAnnonceSchema, "params"),
+  validate(updateAnnonceSchema),
+  annonceController.updateAnnonceBailleur
+);
+
+module.exports = {routerAnnonce,};

@@ -1,94 +1,88 @@
-const express = require("express")
-const { router } = require("./routes/index.route")
-const cors = require("cors")
-const cookieParser = require("cookie-parser")
-const { limitGlobal } = require("./middlewares/rateLimit")
-const hpp = require("hpp")
-const helmet = require("helmet")
-const { sanitizeBody } = require("./middlewares/sanitize.middleware")
-const i18nextMiddleware= require("./middlewares/i18next.middleware")
+const express = require("express");
+const cors = require("cors");
+const helmet = require("helmet");
+const hpp = require("hpp");
+const cookieParser = require("cookie-parser");
+// const csrf = require("csurf"); // voir la section CSRF plus bas
 
+const { router } = require("./routes/index.route");
+const { limitGlobal } = require("./middlewares/rateLimit");
+const { sanitizeBody } = require("./middlewares/sanitize.middleware");
+const i18nextMiddleware = require("./middlewares/i18next.middleware");
+const notFound = require("./middlewares/NotFound.middleware");
+const errorHandler = require("./middlewares/errorHandler");
+const AppError = require("./errors/AppError");
 
-const app = express()
-app.set("trust proxy", 1)
+// Calculé une seule fois au démarrage (et non à chaque requête)
+const allowedOrigins = (process.env.ALLOWED_ORIGINS ?? "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+const localPatterns = [/^http:\/\/localhost(:\d+)?$/];
 
-//securation avec helmet
-app.use(helmet({
+const app = express();
+app.set("trust proxy", 1);
+
+/* SÉCURITÉ DES EN-TÊTES */
+app.use(
+  helmet({
     contentSecurityPolicy: {
-        directives: {
-            defaultSrc: ["'self'"],
-            scriptSrc:  ["'self'"],
-            objectSrc:  ["'none'"],
-        }
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        objectSrc: ["'none'"],
+      },
     },
     crossOriginEmbedderPolicy: true,
     crossOriginResourcePolicy: { policy: "same-origin" },
-}))
+  })
+);
 
-// permet a d'autre domaine comme notre frontend d'avoir access au backend
-app.use(cors({
-    origin: function(origin, callback) {
-            const allowed = process.env.ALLOWED_ORIGINS?.split(",").map(s => s.trim()).filter(Boolean) ?? []
-            const localPatterns = [/^http:\/\/localhost(:\d+)?$/]
-            if (!origin || allowed.includes(origin) || localPatterns.some(p => p.test(origin))) {
-                callback(null, true)
-            } else {
-                callback(new Error(`Origine non autorisée : ${origin}`))
-            }
-        },
-    methods: ['GET', 'POST', 'PUT', 'DELETE','PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization',/*  "X-CSRF-Token" */],
-    credentials: true
-}));
-app.use(limitGlobal)
-
-// limation du body
-app.use(express.json({ limit: "10kb" }))
-app.use(express.urlencoded({ extended: true, limit: "10kb" }))
-
-app.use(i18nextMiddleware)
-app.use(cookieParser(process.env.COOKIE_SECRET))
-
-
-
-//securisation des params des router
-app.use(hpp({
-    whitelist : ["type","ville","prix","localisation","quatier"],
-}))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// laissaon des routes a l'application 
-app.use("/api",sanitizeBody,router)
+/* HEALTH CHECK */
 app.get("/health", (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: "ImoFast API is running"
-  });
+  res.status(200).json({ success: true, message: "ImoFast API is running" });
 });
-app.post("/",(req,res)=>{
-    console.log(req.body)
-    res.status(200).json({
-        success: true,
-        msg: "flutter fonctionne bien"
-    })
-})
 
-// ============================== EN production ==========================
-// const csrfProtection = csrf({ cookie: { httpOnly: true, secure: true } })
-// app.use(csrfProtection)
+/* CORS */
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      const ok =
+        !origin ||
+        allowedOrigins.includes(origin) ||
+        localPatterns.some((p) => p.test(origin));
 
-module.exports = {app}
+      if (ok) return callback(null, true);
+      callback(new AppError(`Origine non autorisée : ${origin}`, 403));
+    },
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    allowedHeaders: ["Content-Type", "Authorization" /*, "X-CSRF-Token" */],
+    credentials: true,
+  })
+);
+
+/* RATE LIMIT */
+app.use(limitGlobal);
+
+/* PARSING */
+app.use(cookieParser(process.env.COOKIE_SECRET));
+app.use(express.json({ limit: "10kb" }));
+app.use(express.urlencoded({ extended: true, limit: "10kb" }));
+
+/* NETTOYAGE */
+app.use(hpp({ whitelist: ["type", "ville", "prix", "localisation", "quatier"] }));
+app.use("/api", sanitizeBody);
+
+/* I18N*/
+app.use(i18nextMiddleware);
+
+/* CSRF */
+
+/* ROUTES */
+app.use("/api", router);
+
+/* ERREURS */
+app.use(notFound);
+app.use(errorHandler);
+
+module.exports = { app };

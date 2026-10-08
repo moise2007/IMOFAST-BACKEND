@@ -1,14 +1,30 @@
-const express = require("express")
-const { getProfil } = require("../controllers/profils/getProfil")
+const express = require("express");
 
-//creation du router
-const routerProfil = express.Router()
+const {
+    authBailleurLocataireAdmin,
+} = require("../middlewares/auth");
+
+const {
+    getProfil,
+} = require("../controllers/profil.controller");
+
+const {
+    getProfilSchema,
+    validate,
+} = require("../validators/profil.validator");
+
+const routerProfil = express.Router();
+
 /**
- *  router permetant d'obtenir un profil
- * body: {idPublic,role}
- * params:
- * query: 
-*/
-routerProfil.post("/",getProfil)
+ * Récupère les informations d'un bailleur ou d'un locataire.
+ */
+routerProfil.post(
+    "/",
+    authBailleurLocataireAdmin,
+    validate(getProfilSchema),
+    getProfil
+);
 
-module.exports = {routerProfil}
+module.exports = {
+    routerProfil,
+};
