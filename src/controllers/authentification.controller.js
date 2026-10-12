@@ -72,6 +72,25 @@ const verifyGoogle = async (req, res) => {
 
     res.status(200).json({
         success: true,
+        connexion: result.exist,
+        message: "Authentification Google réussie.",
+        data: result,
+    });
+};
+
+/**
+ * verifie la disponiblite d'un email ou telephone
+ *
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @returns {Promise<void>}
+ */
+const canUseIdentifiant = async (req, res) => {
+    const result = await authentificationService.canUseIdentifiant(req.body);
+
+    res.status(200).json({
+        success: true,
+        connexion: result.exist,
         message: "Authentification Google réussie.",
         data: result,
     });
@@ -243,5 +262,6 @@ module.exports = {
     updateIdentifier,
     updatePassword,
     forgotPassword,
-    forgotPasswordUpdate
+    forgotPasswordUpdate,
+    canUseIdentifiant
 };

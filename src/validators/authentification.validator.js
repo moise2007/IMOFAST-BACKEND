@@ -274,15 +274,48 @@ const googleAuthSchema = (body = {}) => {
     } = body;
 
     if (!isNonEmptyString(idToken)) {
-        throw new AppError(
-            "Le token Google est obligatoire."
-        );
+        throw new AppError( "Le token Google est obligatoire.",400 );
     }
 
     if (!isValidRole(role)) {
-        throw new AppError(
-            "Le rôle doit être 'bailleur' ou 'locataire'."
-        );
+        throw new AppError( "Le rôle doit être 'bailleur' ou 'locataire'.",422);
+    }
+
+    return body;
+};
+
+/**
+ * Schéma de verification de la disponibilite d'un email ou d'un telephone
+ *
+ * @param {Object} body
+ * @returns {Object}
+ * @throws {AppError}
+ */
+const canUseIdentifiantSchema = (body = {}) => {
+    const {
+        email,
+        telephone,
+        role,
+    } = body;
+
+    if (
+        email !== undefined &&
+        email !== null &&
+        !isValidEmail(email)
+    ) {
+        throw new AppError( "L'adresse email est invalide.", 400);
+    }
+
+    if (
+        telephone !== undefined &&
+        telephone !== null &&
+        !isValidTelephone(telephone)
+    ) {
+        throw new AppError( "Le numéro de téléphone est invalide.",400);
+    }
+
+    if (!isValidRole(role)) {
+        throw new AppError( "Le rôle doit être 'bailleur' ou 'locataire'.",422);
     }
 
     return body;
@@ -590,6 +623,6 @@ module.exports = {
     updateIdentifierSchema,
     updatePasswordSchema,
     forgotPasswordSchema,
-
+    canUseIdentifiantSchema,
     validate,
 };

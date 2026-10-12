@@ -60,10 +60,7 @@ const getProfilBailleur = async (req, res) => {
  * @returns {Promise<void>}
  */
 const updateDataBailleur = async (req, res) => {
-    const data = await bailleurService.updateDataBailleur(
-        req.user,
-        req.body
-    );
+    const data = await bailleurService.updateDataBailleur( req.user, req.body );
 
     res.status(200).json({
         success: true,

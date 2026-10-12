@@ -7,10 +7,12 @@ const uploadService = require("../services/ApiService/upload.service");
  * @param {import("express").Response} res
  */
 const uploadFiles = async (req, res) => {
+    console.log("req.files:", req?.files);
     const result = await uploadService.uploadFiles({
         files: req.files,
         req,
     });
+    console.log("result uploadFiles:", result);
 
     return res.status(200).json({
         success: true,

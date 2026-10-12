@@ -14,7 +14,7 @@ module.exports = (err, req, res, next) => {
   }
 
   // Erreur imprévue 
-  console.error(err);
+  console.error("erreur: ",err);
   return res.status(500).json({
     success: false,
     message: "Erreur interne du serveur",

@@ -124,7 +124,6 @@ const register = async (data) => {
         hashedPassword = await bcrypt.hash(password, 12);
     }
 
-    console.log(emailVerifie)
     const userData = authentificationModel.createUser({
         role,
         nom,
@@ -136,7 +135,6 @@ const register = async (data) => {
         uidGoogle: uid,
     });
 
-    console.log(userData)
 
     
 
@@ -270,12 +268,13 @@ const verifyGoogle = async (data) => {
         idToken,
     } = data;
 
+    let exist = false
     if (!["bailleur", "locataire"].includes(role)) {
         throw new AppError("Rôle utilisateur invalide.",422);
     }
 
     if (!idToken) {
-        throw new AppError("Le token Google est obligatoire.",422);
+        throw new AppError("Le token Google est obligatoire.",400);
     }
 
     /*
@@ -286,11 +285,10 @@ const verifyGoogle = async (data) => {
     const googleUser = await authentificationRepository.verifyGoogleToken(idToken);
 
     if (!googleUser) {
-        throw new AppError("Token Google invalide.",422);
+        throw new AppError("Token Google invalide.",400);
     }
 
-    let user =
-        await authentificationRepository.findUserByIdentifier({
+    let user = await authentificationRepository.findUserByIdentifier({
             role,
             identifiant: googleUser.email.toLowerCase(),
         });
@@ -299,7 +297,8 @@ const verifyGoogle = async (data) => {
      * Si aucun compte n'existe, création automatique.
      */
     if (!user) {
-        const userData = authentificationModel.createUser({
+        exist = false
+        const userData = {
             role,
             nom: googleUser.nom,
             prenom: googleUser.prenom,
@@ -308,13 +307,17 @@ const verifyGoogle = async (data) => {
             telephoneVerifie:false,
             telephone: googleUser.telephone || null,
             password: null,
-            idToken,
-        });
+            uidGoogle: googleUser.uidGoogle,
+        };
+        const userModel = role == "locataire" 
+            ? new Locataire(userData).toFirebase()
+            : new Bailleur(userData).toFirebase()
+        
 
-        user = await authentificationRepository.createUser(
-            role,
-            userData
-        );
+        user = await authentificationRepository.createUser( role, userModel );
+    }
+    else{
+        exist = true
     }
 
     const sessionId = await createSession( user.id, role);
@@ -322,8 +325,29 @@ const verifyGoogle = async (data) => {
     return {
         user,
         sessionId,
+        exist
     };
 };
+
+const canUseIdentifiant = async(data)=>{
+    const {role, email, telephone} = data
+
+    // verification
+    const [dataVerifyTelephone,dataVerifyEmail] = await Promise.all([
+        authentificationRepository.findVerifiedUserByIdentifier({ role, telephone, }),
+        authentificationRepository.findVerifiedUserByIdentifier({ role, email, })
+    ])
+
+    return {
+        email: {
+            available: !Boolean(dataVerifyEmail)
+        },
+        telephone: {
+            available: !Boolean(dataVerifyTelephone)
+        }
+    }
+
+}
 
 /**
  * Envoie un code OTP.
@@ -815,5 +839,6 @@ module.exports = {
     updateIdentifier,
     updatePassword,
     forgotPassword,
-    forgotPasswordUpdate
+    forgotPasswordUpdate,
+    canUseIdentifiant
 };

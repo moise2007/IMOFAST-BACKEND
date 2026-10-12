@@ -2,6 +2,7 @@ const bcrypt = require("bcrypt");
 
 const bailleurRepository = require("../../repositories/bailleur.repository");
 const { normalizeTelephone } = require("../../utils/telephone");
+const AppError = require("../../errors/AppError");
 
 /**
  * Récupère les données du bailleur authentifié.
@@ -54,19 +55,7 @@ const getDataAccueilBailleur = async (user) => {
         );
     }
 
-    return {
-        idPublic: bailleur.idPublic,
-        nom: bailleur.nom,
-        prenom: bailleur.prenom,
-        nomAgence: bailleur.nomAgence,
-        photoProfil: bailleur.photoProfil,
-        score: bailleur.score,
-        notation: bailleur.notation,
-        activite: bailleur.activite,
-        forfait: bailleur.forfait,
-        status: bailleur.status,
-        enligne: bailleur.enligne,
-    };
+    return bailleur;
 };
 
 /**
@@ -103,16 +92,13 @@ const getProfilBailleur = async (idPublic) => {
  * @returns {Promise<Object>}
  */
 const updateDataBailleur = async (user, data) => {
-    const bailleurId = user.id || user.userId;
+    const bailleurId = user.id || user.idPublic;
 
-    const bailleur = await bailleurRepository.findById(
-        bailleurId
+    const bailleur = await bailleurRepository.findById( bailleurId
     );
 
     if (!bailleur) {
-        throw new Error(
-            "Bailleur introuvable."
-        );
+        throw new AppError( "Bailleur introuvable.", 404);
     }
 
     const updateData = {};

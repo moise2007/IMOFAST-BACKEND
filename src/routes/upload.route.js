@@ -33,7 +33,6 @@ routerUpload.post(
     "/files",
     authBailleurLocataireAdmin,
     middlewareUploads,
-    validateUploadFiles,
     uploadFiles
 );
 

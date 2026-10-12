@@ -11,6 +11,7 @@ const {
     verifyTelephone,
     updateIdentifier,
     updatePassword,
+    canUseIdentifiant,
     forgotPassword,
     forgotPasswordUpdate,
 } = require("../controllers/authentification.controller");
@@ -29,6 +30,7 @@ const {
     updatePasswordSchema,
     forgotPasswordSchema,
     validate,
+    canUseIdentifiantSchema,
 } = require("../validators/authentification.validator");
 
 const routerAuthentification = express.Router();
@@ -50,6 +52,12 @@ routerAuthentification.post("/login",validate(loginSchema),login);
  * @description Authentifie ou inscrit un utilisateur avec Google.
  */
 routerAuthentification.post( "/google", validate(googleAuthSchema), verifyGoogle);
+
+/**
+ * @route POST /auth/google
+ * @description Authentifie ou inscrit un utilisateur avec Google.
+ */
+routerAuthentification.post( "/can-use-identifiant", validate(canUseIdentifiantSchema), canUseIdentifiant);
 
 /**
  * @route DELETE /auth/logout

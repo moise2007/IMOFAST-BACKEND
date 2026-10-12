@@ -3,13 +3,15 @@ const { z } = require("zod");
 const createAlerteSchema = z.object({
   type: z.enum(["appartement", "villa", "duplex", "studio", "chambre"], {
     message: "type invalide (appartement, villa, duplex, studio ou chambre)",
-  }),
+  }).optional(),
   nature: z.enum(["moderne", "simple", "meubler"], {
     message: "nature invalide (moderne, simple ou meubler)",
-  }),
+  }).optional(),
+  limit: z.string().trim().optional(),
+  page: z.string().trim().optional(),
   natureAnnonce: z.enum(["vente", "location"], {
     message: "nature de l'annonce invalide (vente ou location)",
-  }),
+  }).optional(),
   ville: z
     .string({ message: "la ville est obligatoire" })
     .trim()
@@ -19,7 +21,8 @@ const createAlerteSchema = z.object({
   prix: z.coerce
     .number({ message: "le prix doit être un nombre" })
     .int("le prix doit être un entier")
-    .min(1000, "le prix est trop bas"),
+    .min(1000, "le prix est trop bas")
+    .optional(),
   frequence: z.string().trim().optional(),
   duree: z.coerce.number().int().positive().optional(),
   caution: z.coerce.number().int().min(0).optional(),
