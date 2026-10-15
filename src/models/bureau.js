@@ -25,7 +25,7 @@ class Bureau {
         climatisation = false,
         internet = false,
         titre = false,
-        photos = [],
+        images = [],
         videos = [],
         bailleurId,
         idCommun,
@@ -53,7 +53,7 @@ class Bureau {
         this.climatisation = climatisation
         this.internet = internet
         this.titre = titre
-        this.photos = photos
+        this.images = images
         this.videos = videos
         this.bailleurId = bailleurId
         this.idCommun = idCommun
@@ -103,7 +103,7 @@ class Bureau {
 
             titre: this.titre,
 
-            photos: this.photos,
+            images: this.images,
             videos: this.videos,
             videosVirtuelle: this.videosVirtuelle,
 

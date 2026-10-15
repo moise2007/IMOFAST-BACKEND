@@ -419,6 +419,8 @@ const verifyOtp = async (data) => {
         throw new AppError(isValid.msg,500);
     }
 
+    
+
     /*
      * Si le rôle est fourni, la vérification concerne
      * directement un utilisateur existant.
@@ -445,6 +447,7 @@ const verifyOtp = async (data) => {
                 user.id
             );
         }
+
 
         return {
             verified: true,

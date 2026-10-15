@@ -1,4 +1,5 @@
 const{ admin } = require("../config/firebase");
+const AppError = require("../errors/AppError");
 const { verifyGoogleTokenAuth } = require("../services/verifyIdGoogle.service");
 
 const db = admin.firestore();
@@ -24,11 +25,13 @@ const getCollection = (role) => {
     const collectionName = COLLECTIONS[role];
 
     if (!collectionName) {
-        throw new Error("Rôle utilisateur invalide.");
+        throw new AppError("Rôle utilisateur invalide.");
     }
 
     return db.collection(collectionName);
 };
+
+
 
 /**
  * Recherche un utilisateur à partir de son identifiant.

@@ -17,7 +17,7 @@ class Terrain {
         lat = null,
         distanceGoudron = null,
         titre = false,
-        photos = [],
+        images = [],
         videos = [],
         bailleurId,
         videosVirtuelle = {}
@@ -37,7 +37,7 @@ class Terrain {
         this.bailleurId = bailleurId
         this.distanceGoudron = distanceGoudron
         this.titre = titre
-        this.photos = photos
+        this.images = images
         this.videos = videos
         this.videosVirtuelle = videosVirtuelle
     }
@@ -66,7 +66,7 @@ class Terrain {
             distanceGoudron: this.distanceGoudron,
             titre: this.titre,
 
-            photos: this.photos,
+            images: this.images,
             videos: this.videos,
             videosVirtuelle: this.videosVirtuelle,
 

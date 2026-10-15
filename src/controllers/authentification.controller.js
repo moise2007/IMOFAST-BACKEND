@@ -241,7 +241,7 @@ const forgotPassword = async (req, res) => {
  * @returns {Promise<void>}
  */
 const forgotPasswordUpdate = async (req, res) => {
-    const result = await authentificationService.forgotPassword(req.body);
+    const result = await authentificationService.forgotPasswordUpdate(req.body);
 
     res.status(200).json({
         success: true,

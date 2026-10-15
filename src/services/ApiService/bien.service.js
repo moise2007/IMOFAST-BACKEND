@@ -1,6 +1,12 @@
 const { formaterObjet } = require("../../utils/clearData");
 
 const bienRepository = require("../../repositories/bien.repository");
+const { Bureau } = require("../../models/bureau");
+const { createId } = require("@paralleldrive/cuid2");
+const { Boutique } = require("../../models/Boutique");
+const { Bien } = require("../../models/biens");
+const { Terrain } = require("../../models/terrain");
+const AppError = require("../../errors/AppError");
 
 const SPECIAL_TYPES = [
   "bureau",
@@ -59,6 +65,7 @@ const createBien = async ({
 
   const cleanData = formaterObjet(data);
 
+
   /**
    * La validation structurelle est faite
    * par Zod.
@@ -80,25 +87,47 @@ const createBien = async ({
     type = cleanData.type;
   }
 
-  const bien = {
-    ...cleanData,
-    bailleurId,
-    type,
-    exemplaire:
-      cleanData.exemplaire ??
-      cleanData.exemplaires,
-  };
+  
+  let bien = null
+  if(cleanData.typeBien == 'bureau'){
+    bien = new Bureau({
+      ...cleanData?.data,
+       ...(cleanData?.data["localisation"] ?? {}),
+      bailleurId,
+      idCommun: createId(),
+    }).toFireBase()
+  }
+  else if(cleanData.typeBien == 'boutique'){
+    bien = new Boutique({
+      ...cleanData?.data,
+      ...(cleanData?.data["localisation"] ?? {}),
+      bailleurId,
+      idCommun: createId(),
+    }).toFireBase()
+  }
+  else if(cleanData.typeBien == 'terrain'){
+    bien = new Terrain({
+      ...cleanData?.data,
+      ...(cleanData?.data["localisation"] ?? {}),
+      bailleurId,
+      idCommun: createId(),
+    }).toFireBase()
+  }
+  else if(cleanData.typeBien == 'logement'){
+      bien = new Bien({
+      ...cleanData?.data,
+      ...(cleanData?.data["localisation"] ?? {}),
+      bailleurId,
+      idCommun: createId(),
+    }).toFirebase()
+  }
+  else{
+    throw new AppError("le type de bien est invalide")
+  }
 
-  /**
-   * Ces champs servent uniquement à la sélection
-   * du type côté client.
-   */
-  delete bien.isBureau;
-  delete bien.isBoutique;
-  delete bien.isTerrain;
 
-  const result =
-    await bienRepository.createMany([bien]);
+
+  const result = await bienRepository.createMany([bien]);
 
   return {
     bien: result[0].bien,
@@ -120,10 +149,7 @@ const getBien = async ({
     await bienRepository.findByPublicId(id);
 
   if (!result) {
-    createBusinessError(
-      "Le bien n'existe pas",
-      404
-    );
+    createBusinessError( "Le bien n'existe pas",404);
   }
 
   return result.bien;

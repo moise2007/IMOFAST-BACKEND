@@ -21,7 +21,7 @@ class Boutique {
         electricite = true,
         toilettes = false,
         climatisation = false,
-        photos = [],
+        images = [],
         videos = [],
         bailleurId,
         videosVirtuelle = {}
@@ -43,7 +43,7 @@ class Boutique {
         this.electricite = electricite
         this.toilettes = toilettes
         this.climatisation = climatisation
-        this.photos = photos
+        this.images = images
         this.videos = videos
         this.bailleurId = bailleurId
         this.videosVirtuelle = videosVirtuelle
@@ -81,7 +81,7 @@ class Boutique {
             },
 
 
-            photos: this.photos,
+            images: this.images,
             videos: this.videos,
             videosVirtuelle: this.videosVirtuelle,
 

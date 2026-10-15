@@ -14,6 +14,7 @@ const {
   getBienSchema,
   updateBienSchema,
   deleteBienSchema,
+  validateCreateBien,
 } = require("../validators/bien.validator");
 
 const routerBien = express.Router();
@@ -24,7 +25,7 @@ const routerBien = express.Router();
 routerBien.post(
   "/",
   authAdminLocataire,
-  validate(createBienSchema),
+  validateCreateBien,
   bienController.createBienBailleur
 );
 

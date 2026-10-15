@@ -71,6 +71,7 @@ routerAuthentification.delete( "/logout", authBailleurLocataireAdmin, logout);
  */
 routerAuthentification.post( "/otp/send", validate(sendOtpSchema), sendOtp);
 
+
 /**
  * @route POST /auth/otp/verify
  * @description Vérifie un code OTP.
@@ -124,7 +125,7 @@ routerAuthentification.post(
  * @route POST /auth/password/forgot/update
  * @description Lance la procédure de récupération du mot de passe.
  */
-routerAuthentification.post(
+routerAuthentification.patch(
     "/password/forgot/update",
     validate(forgotPasswordSchema),
     forgotPasswordUpdate

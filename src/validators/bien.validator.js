@@ -1,480 +1,389 @@
 const { z } = require("zod");
 
-const SPECIAL_TYPES = [
-  "bureau",
-  "boutique",
-  "terrain",
-];
+/* -------------------------------------------------------------------------- */
+/*  Constantes & helpers                                                      */
+/* -------------------------------------------------------------------------- */
 
-/**
- * Transforme les valeurs vides en undefined.
- *
- * @param {*} value
- * @returns {*}
- */
-const emptyToUndefined = (value) => {
-  if (
-    value === "" ||
-    value === "null" ||
-    value === "undefined"
-  ) {
-    return undefined;
-  }
+const MAX_EXEMPLAIRES = 5000;
+const ETATS = ["libre", "occuper", "construction"];
 
-  return value;
+/** type spécial -> nom du flag envoyé par le client */
+const SPECIAL_TYPES = {
+  bureau: "isBureau",
+  boutique: "isBoutique",
+  terrain: "isTerrain",
 };
 
-/**
- * Convertit les valeurs booléennes provenant
- * notamment des query params.
- *
- * @param {*} value
- * @returns {boolean|undefined}
- */
-const booleanFromQuery = (value) => {
-  if (
-    value === true ||
-    value === "true" ||
-    value === "1"
-  ) {
-    return true;
-  }
+const emptyToUndefined = (v) =>
+  v === "" || v === "null" || v === "undefined" ? undefined : v;
 
-  if (
-    value === false ||
-    value === "false" ||
-    value === "0"
-  ) {
-    return false;
-  }
-
+const booleanFromQuery = (v) => {
+  if (v === true || v === "true" || v === "1") return true;
+  if (v === false || v === "false" || v === "0") return false;
   return undefined;
 };
 
-/**
- * Validation des données de création d'un bien.
- */
-const createBienSchema = z
+const str = () => z.string().trim();
+const optStr = () => z.preprocess(emptyToUndefined, str().optional());
+const num = () => z.coerce.number();
+const coord = () =>
+  z.preprocess(emptyToUndefined, z.coerce.number().nullable().optional());
+const flag = () => z.boolean().optional();
+
+/* -------------------------------------------------------------------------- */
+/*  Blocs communs                                                             */
+/* -------------------------------------------------------------------------- */
+
+/** Champs communs à bureau / boutique / terrain (voir les modèles) */
+const commonSpecialShape = {
+  superficie: num().positive("La superficie doit être supérieure à 0"),
+  pays: optStr(),
+  ville: str().min(1, "La ville est obligatoire"),
+  quartier: str().min(1, "Le quartier est obligatoire"),
+  lieuDit: optStr(),
+  lon: coord(),
+  lat: coord(),
+  distanceGoudron: z.preprocess(
+    emptyToUndefined,
+    num().nonnegative().nullable().optional()
+  ),
+  etat: z.enum(ETATS).optional(),
+  idCommun: optStr(),
+  images: z.array(z.any()).optional(),
+  videos: z.array(z.any()).optional(),
+  videosVirtuelle: z.record(z.any()).optional(),
+};
+
+/** { libre|disponible, occuper, construction } -> entiers >= 0 */
+const exemplairesSchema = z
   .object({
-    nom: z.string().trim().optional(),
-
-    type: z.string().trim().optional(),
-
-    nature: z.string().trim().optional(),
-
-    etat: z.string().trim().optional(),
-
-    images: z.array(z.any()).optional(),
-
-    etage: z
-      .object({
-        min: z.coerce.number().optional(),
-        max: z.coerce.number().optional(),
-      })
-      .optional(),
-
-    superficie: z.coerce
-      .number()
-      .nonnegative()
-      .optional(),
-
-    exemplaire: z.any().optional(),
-
-    exemplaires: z.any().optional(),
-
-    brouillon: z
-      .boolean()
-      .optional(),
-
-    isBureau: z.boolean().optional(),
-
-    isBoutique: z.boolean().optional(),
-
-    isTerrain: z.boolean().optional(),
-
-    bureau: z.any().optional(),
-
-    boutique: z.any().optional(),
-
-    terrain: z.any().optional(),
-
-    nombreBureaux: z.coerce
-      .number()
-      .int()
-      .positive()
-      .max(5000)
-      .optional(),
-
-    chambres: z.any().optional(),
-
-    salleBains: z.any().optional(),
-
-    localisation: z.any().optional(),
-
-    equipements: z.any().optional(),
-
-    securite: z.any().optional(),
-
-    environements: z.any().optional(),
-
-    mode: z.string().trim().optional(),
-
-    niveauFinition: z
-      .string()
-      .trim()
-      .optional(),
+    libre: z.coerce.number().int().nonnegative().optional(),
+    disponible: z.coerce.number().int().nonnegative().optional(),
+    occuper: z.coerce.number().int().nonnegative().default(0),
+    construction: z.coerce.number().int().nonnegative().default(0),
   })
-  .passthrough()
-  .superRefine((data, ctx) => {
-    const selectedTypes =
-      SPECIAL_TYPES.filter(
-        (type) =>
-          data[
-            `is${type[0].toUpperCase()}${type.slice(1)}`
-          ] === true
-      );
-
-    if (selectedTypes.length > 1) {
+  .transform(({ libre, disponible, occuper, construction }) => ({
+    libre: libre ?? disponible ?? 0,
+    occuper,
+    construction,
+  }))
+  .superRefine((u, ctx) => {
+    const total = u.libre + u.occuper + u.construction;
+    if (total < 1) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message:
-          "Un seul type spécial peut être sélectionné",
-        path: ["type"],
+        message: "Le nombre d'exemplaires est invalide (minimum 1)",
       });
-
-      return;
     }
-
-    const flatType =
-      SPECIAL_TYPES.includes(data.type)
-        ? data.type
-        : null;
-
-    if (
-      selectedTypes.length === 1 ||
-      flatType
-    ) {
-      const legacyFlags =
-        selectedTypes.length === 1;
-
-      const type = legacyFlags
-        ? selectedTypes[0]
-        : flatType;
-
-      if (
-        legacyFlags &&
-        flatType &&
-        flatType !== type
-      ) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message:
-            "Les types du bien sont incohérents",
-          path: ["type"],
-        });
-
-        return;
-      }
-
-      if (legacyFlags) {
-        const entity = data[type];
-
-        if (
-          !entity ||
-          typeof entity !== "object" ||
-          Array.isArray(entity)
-        ) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message:
-              `Les données du ${type} sont obligatoires`,
-            path: [type],
-          });
-
-          return;
-        }
-
-        const units =
-          entity.exemplaires ??
-          data.exemplaires ??
-          {};
-
-        const counts = [
-          units.libre ??
-            units.disponible,
-          units.occuper,
-          units.construction,
-        ].map((value) =>
-          Number(value ?? 0)
-        );
-
-        const total =
-          counts.reduce(
-            (sum, value) =>
-              sum + value,
-            0
-          );
-
-        if (
-          counts.some(
-            (value) =>
-              !Number.isInteger(value) ||
-              value < 0
-          ) ||
-          total < 1
-        ) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message:
-              "Le nombre d'exemplaires est invalide",
-            path: [type],
-          });
-        }
-
-        if (total > 5000) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message:
-              "Le nombre d'exemplaires ne peut pas dépasser 5000",
-            path: [type],
-          });
-        }
-      } else {
-        const count =
-          type === "bureau"
-            ? Number(
-                data.nombreBureaux ?? 1
-              )
-            : 1;
-
-        if (
-          !Number.isInteger(count) ||
-          count < 1 ||
-          count > 5000
-        ) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message:
-              "Le nombre d'exemplaires est invalide",
-            path: [type],
-          });
-        }
-      }
-
-      return;
-    }
-
-    if (!data.brouillon) {
-      const requiredFields = [
-        [
-          "images",
-          Array.isArray(data.images) &&
-            data.images.length > 0,
-        ],
-        [
-          "etage",
-          data.etage?.min != null,
-        ],
-        [
-          "nature",
-          Boolean(data.nature),
-        ],
-        [
-          "type",
-          Boolean(data.type),
-        ],
-        [
-          "etat",
-          Boolean(data.etat),
-        ],
-      ];
-
-      for (
-        const [field, valid]
-        of requiredFields
-      ) {
-        if (!valid) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message:
-              `Le champ ${field} est obligatoire`,
-            path: [field],
-          });
-        }
-      }
+    if (total > MAX_EXEMPLAIRES) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `Le nombre d'exemplaires ne peut pas dépasser ${MAX_EXEMPLAIRES}`,
+      });
     }
   });
 
+/* -------------------------------------------------------------------------- */
+/*  Schémas par type                                                          */
+/* -------------------------------------------------------------------------- */
+
+const bureauSchema = z
+  .object({
+    ...commonSpecialShape,
+    forme: optStr(),
+    dimension: z.any().optional(),
+    niveau: z.coerce.number().int().optional(),
+    nombrePieces: z.coerce.number().int().positive().optional(),
+    salleReunion: flag(),
+    accueil: flag(),
+    parking: flag(),
+    eau: flag(),
+    electricite: flag(),
+    toilettes: flag(),
+    climatisation: flag(),
+    internet: flag(),
+    titre: flag(),
+  })
+  .strip();
+
+const boutiqueSchema = z
+  .object({
+    ...commonSpecialShape,
+    etage: z.coerce.number().int().optional(),
+    nombrePieces: z.coerce.number().int().positive().optional(),
+    parking: flag(),
+    eau: flag(),
+    electricite: flag(),
+    toilettes: flag(),
+    climatisation: flag(),
+  })
+  .strip();
+
+const terrainSchema = z
+  .object({
+    ...commonSpecialShape,
+    type: optStr(), // ex : constructible, agricole...
+    forme: optStr(),
+    dimension: z.any().optional(),
+    titre: flag(),
+  })
+  .strip();
+
 /**
- * Schéma de récupération d'un bien.
+ * Logement (= "bien" classique).
+ * En brouillon, tout est optionnel ; sinon les champs clés sont obligatoires.
  */
+const logementBase = z
+  .object({
+    nom: optStr(),
+    type: optStr(),
+    nature: optStr(),
+    etat: optStr(),
+    mode: optStr(),
+    niveauFinition: optStr(),
+    description: optStr(),
+    brouillon: z.boolean().optional(),
+
+    // le modèle stocke images en objet, les autres en tableau : on accepte les deux
+    images: z.union([z.array(z.any()), z.record(z.any())]).optional(),
+    videos: z.array(z.any()).optional(),
+
+    etage: z
+      .object({
+        min: z.preprocess(emptyToUndefined, z.coerce.number().optional()),
+        max: z.preprocess(emptyToUndefined, z.coerce.number().optional()),
+      })
+      .optional(),
+
+    superficie: num().nonnegative().optional(),
+
+    exemplaire: z.any().optional(),
+    exemplaires: z.any().optional(),
+
+    chambres: z.any().optional(),
+    salons: z.any().optional(),
+    cuisines: z.any().optional(),
+    salleBains: z.any().optional(),
+    localisation: z.any().optional(),
+    equipements: z.any().optional(),
+    securite: z.any().optional(),
+    environements: z.any().optional(),
+    eau: z.any().optional(),
+    electricite: z.any().optional(),
+  })
+  .passthrough();
+
+const hasImages = (images) =>
+  Array.isArray(images)
+    ? images.length > 0
+    : !!images && Object.keys(images).length > 0;
+
+const logementSchema = logementBase.superRefine((data, ctx) => {
+  if (data.brouillon) return;
+
+  const required = [
+    ["images", hasImages(data.images)],
+    ["etage", data.etage?.min != null],
+    ["nature", !!data.nature],
+    ["type", !!data.type],
+    ["etat", !!data.etat],
+  ];
+
+  for (const [field, valid] of required) {
+    if (!valid) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `Le champ ${field} est obligatoire`,
+        path: [field],
+      });
+    }
+  }
+});
+
+const ENTITY_SCHEMAS = {
+  bureau: bureauSchema,
+  boutique: boutiqueSchema,
+  terrain: terrainSchema,
+  logement: logementSchema,
+};
+
+/* -------------------------------------------------------------------------- */
+/*  Détection du type                                                         */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Retourne { type } ou { error }.
+ * Format attendu :  { isBureau: true, bureau: {...} }
+ * Fallback        :  { type: "bureau", ... }  (format plat)
+ * Aucun des deux  :  logement
+ */
+const detectType = (body = {}) => {
+  const flagged = Object.keys(SPECIAL_TYPES).filter(
+    (t) => body[SPECIAL_TYPES[t]] === true
+  );
+
+  if (flagged.length > 1) {
+    return { error: "Un seul type spécial peut être sélectionné" };
+  }
+
+  const flat = Object.keys(SPECIAL_TYPES).includes(body.type)
+    ? body.type
+    : null;
+
+  if (flagged.length === 1) {
+    if (flat && flat !== flagged[0]) {
+      return { error: "Les types du bien sont incohérents" };
+    }
+    return { type: flagged[0], nested: true };
+  }
+
+  if (flat) return { type: flat, nested: false };
+
+  return { type: "logement", nested: false };
+};
+
+/* -------------------------------------------------------------------------- */
+/*  Middleware de création                                                    */
+/* -------------------------------------------------------------------------- */
+
+const fail = (res, errors) =>
+  res.status(400).json({
+    success: false,
+    message: "Données invalides",
+    errors,
+  });
+
+const zodErrors = (error, prefix = "") =>
+  error.issues.map((i) => ({
+    champ: [prefix, i.path.join(".")].filter(Boolean).join("."),
+    message: i.message,
+  }));
+
+/**
+ * Valide la création d'un bien selon son type.
+ *
+ * Après validation, req.body vaut :
+ *   {
+ *     typeBien: "bureau" | "boutique" | "terrain" | "logement",
+ *     data: { ...champs validés de l'entité },
+ *     exemplaires: { libre, occuper, construction },   // bureau/boutique/terrain
+ *     ...
+ *   }
+ */
+const validateCreateBien = (req, res, next) => {
+  const body = req.body ?? {};
+  const detected = detectType(body);
+
+  if (detected.error) {
+    return fail(res, [{ champ: "type", message: detected.error }]);
+  }
+
+  const { type, nested } = detected;
+
+  /* ----------------------------- Logement -------------------------------- */
+  if (type === "logement") {
+    const result = logementSchema.safeParse(body);
+    if (!result.success) return fail(res, zodErrors(result.error));
+
+    req.body = { typeBien: "logement", data: result.data };
+    return next();
+  }
+
+  /* ------------------------ Bureau / Boutique / Terrain ------------------- */
+  // format imbriqué : body[type] ; format plat : le body lui-même
+  const rawEntity = nested ? body[type] : body;
+
+  if (
+    !rawEntity ||
+    typeof rawEntity !== "object" ||
+    Array.isArray(rawEntity)
+  ) {
+    return fail(res, [
+      { champ: type, message: `Les données du ${type} sont obligatoires` },
+    ]);
+  }
+
+  const entityResult = ENTITY_SCHEMAS[type].safeParse(rawEntity);
+  if (!entityResult.success) {
+    return fail(res, zodErrors(entityResult.error, nested ? type : ""));
+  }
+
+  // Exemplaires : entité > body > nombreBureaux (bureau) > 1 libre par défaut
+  let rawUnits = rawEntity.exemplaires ?? body.exemplaires;
+
+  if (rawUnits === undefined) {
+    const count = type === "bureau" ? Number(body.nombreBureaux ?? 1) : 1;
+
+    if (!Number.isInteger(count) || count < 1 || count > MAX_EXEMPLAIRES) {
+      return fail(res, [
+        { champ: "nombreBureaux", message: "Le nombre d'exemplaires est invalide" },
+      ]);
+    }
+    rawUnits = { libre: count };
+  }
+
+  const unitsResult = exemplairesSchema.safeParse(rawUnits);
+  if (!unitsResult.success) {
+    return fail(res, zodErrors(unitsResult.error, "exemplaires"));
+  }
+
+  req.body = {
+    typeBien: type,
+    data: entityResult.data,
+    exemplaires: unitsResult.data,
+  };
+
+  next();
+};
+
+/* -------------------------------------------------------------------------- */
+/*  Autres schémas (inchangés)                                                */
+/* -------------------------------------------------------------------------- */
+
 const getBienSchema = z.object({
   id: z
     .string()
     .trim()
-    .min(
-      1,
-      "L'identifiant du bien est obligatoire"
-    )
-    .max(
-      100,
-      "L'identifiant du bien est invalide"
-    ),
+    .min(1, "L'identifiant du bien est obligatoire")
+    .max(100, "L'identifiant du bien est invalide"),
 });
 
-/**
- * Schéma de suppression.
- */
-const deleteBienSchema =
-  getBienSchema;
+const deleteBienSchema = getBienSchema;
 
-/**
- * Schéma de récupération paginée
- * et filtrée des biens.
- */
+const boolQuery = () => z.preprocess(booleanFromQuery, z.boolean().optional());
+const intQuery = () => z.coerce.number().int().nonnegative().optional();
+
 const getBiensSchema = z.object({
-  /**
-   * Pagination.
-   */
-  page: z.coerce
-    .number()
-    .int()
-    .positive()
-    .default(1),
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(10),
 
-  limit: z.coerce
-    .number()
-    .int()
-    .positive()
-    .max(100)
-    .default(10),
+  bailleurId: optStr(),
+  nature: optStr(),
+  type: optStr(),
+  ville: optStr(),
+  quartier: optStr(),
+  niveau: optStr(),
+  mode: optStr(),
 
-  /**
-   * Filtres métier.
-   */
-  bailleurId: z.preprocess(
-    emptyToUndefined,
-    z.string().trim().optional()
-  ),
+  nombreChambre: intQuery(),
+  nombreSalleBain: intQuery(),
+  superficie: z.coerce.number().nonnegative().optional(),
+  etageMax: intQuery(),
 
-  nature: z.preprocess(
-    emptyToUndefined,
-    z.string().trim().optional()
-  ),
-
-  type: z.preprocess(
-    emptyToUndefined,
-    z.string().trim().optional()
-  ),
-
-  ville: z.preprocess(
-    emptyToUndefined,
-    z.string().trim().optional()
-  ),
-
-  quartier: z.preprocess(
-    emptyToUndefined,
-    z.string().trim().optional()
-  ),
-
-  niveau: z.preprocess(
-    emptyToUndefined,
-    z.string().trim().optional()
-  ),
-
-  mode: z.preprocess(
-    emptyToUndefined,
-    z.string().trim().optional()
-  ),
-
-  nombreChambre: z.coerce
-    .number()
-    .int()
-    .nonnegative()
-    .optional(),
-
-  nombreSalleBain: z.coerce
-    .number()
-    .int()
-    .nonnegative()
-    .optional(),
-
-  superficie: z.coerce
-    .number()
-    .nonnegative()
-    .optional(),
-
-  etageMax: z.coerce
-    .number()
-    .int()
-    .nonnegative()
-    .optional(),
-
-  camera: z.preprocess(
-    booleanFromQuery,
-    z.boolean().optional()
-  ),
-
-  barriere: z.preprocess(
-    booleanFromQuery,
-    z.boolean().optional()
-  ),
-
-  wifi: z.preprocess(
-    booleanFromQuery,
-    z.boolean().optional()
-  ),
-
-  televiseur: z.preprocess(
-    booleanFromQuery,
-    z.boolean().optional()
-  ),
-
-  parking: z.preprocess(
-    booleanFromQuery,
-    z.boolean().optional()
-  ),
-
-  piscine: z.preprocess(
-    booleanFromQuery,
-    z.boolean().optional()
-  ),
-
-  ascenseur: z.preprocess(
-    booleanFromQuery,
-    z.boolean().optional()
-  ),
-
-  refrigerateur: z.preprocess(
-    booleanFromQuery,
-    z.boolean().optional()
-  ),
-
-  cuisine: z.preprocess(
-    booleanFromQuery,
-    z.boolean().optional()
-  ),
-
-  hopital: z.preprocess(
-    booleanFromQuery,
-    z.boolean().optional()
-  ),
-
-  ecole: z.preprocess(
-    booleanFromQuery,
-    z.boolean().optional()
-  ),
-
-  marche: z.preprocess(
-    booleanFromQuery,
-    z.boolean().optional()
-  ),
+  camera: boolQuery(),
+  barriere: boolQuery(),
+  wifi: boolQuery(),
+  televiseur: boolQuery(),
+  parking: boolQuery(),
+  piscine: boolQuery(),
+  ascenseur: boolQuery(),
+  refrigerateur: boolQuery(),
+  cuisine: boolQuery(),
+  hopital: boolQuery(),
+  ecole: boolQuery(),
+  marche: boolQuery(),
 });
 
-/**
- * Champs protégés qui ne peuvent jamais
- * être modifiés par le client.
- */
 const champsProteges = [
   "idPublic",
   "bailleurId",
@@ -484,76 +393,39 @@ const champsProteges = [
   "_id",
 ];
 
-/**
- * Schéma de modification.
- */
 const updateBienSchema = z
   .object({})
   .passthrough()
   .refine(
-    (data) =>
-      Object.keys(data).some(
-        (key) =>
-          !champsProteges.includes(key)
-      ),
-    {
-      message:
-        "Aucun champ à modifier",
-    }
+    (data) => Object.keys(data).some((k) => !champsProteges.includes(k)),
+    { message: "Aucun champ à modifier" }
   );
 
-/**
- * Middleware de validation générique.
- *
- * @param {import("zod").ZodType} schema
- * @param {"body"|"query"|"params"} source
- * @returns {Function}
- */
-const validate = (
-  schema,
-  source = "body"
-) => {
-  return (req, res, next) => {
-    const result =
-      schema.safeParse(req[source]);
+/** Middleware générique (inchangé) */
+const validate = (schema, source = "body") => (req, res, next) => {
+  const result = schema.safeParse(req[source]);
 
-    if (!result.success) {
-      return res.status(400).json({
-        success: false,
-        message: "Données invalides",
-        errors:
-          result.error.issues.map(
-            (issue) => ({
-              champ:
-                issue.path.join("."),
-              message:
-                issue.message,
-            })
-          ),
-      });
-    }
+  if (!result.success) return fail(res, zodErrors(result.error));
 
-    if (source === "body") {
-      req.body = result.data;
-    } else if (
-      source === "query"
-    ) {
-      req.validatedQuery =
-        result.data;
-    } else {
-      req.validatedParams =
-        result.data;
-    }
+  if (source === "body") req.body = result.data;
+  else if (source === "query") req.validatedQuery = result.data;
+  else req.validatedParams = result.data;
 
-    next();
-  };
+  next();
 };
 
 module.exports = {
   validate,
-  createBienSchema,
+  validateCreateBien,
   getBiensSchema,
   getBienSchema,
   updateBienSchema,
   deleteBienSchema,
+  // exportés pour les tests
+  bureauSchema,
+  boutiqueSchema,
+  terrainSchema,
+  logementSchema,
+  exemplairesSchema,
+  detectType,
 };
