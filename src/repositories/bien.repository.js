@@ -85,8 +85,7 @@ const createMany = async (biens) => {
     );
 
     const documents = chunk.map((bien) => {
-      const ref =
-        db.collection(COLLECTION).doc();
+      const ref = db.collection(COLLECTION).doc();
 
       batch.set(ref, bien);
 

@@ -14,7 +14,7 @@ class Bureau {
         lon = null,
         lat = null,
         distanceGoudron = null,
-        niveau = 0,
+        etape = 0,
         nombrePieces = 1,
         salleReunion = false,
         accueil = false,
@@ -24,12 +24,11 @@ class Bureau {
         toilettes = false,
         climatisation = false,
         internet = false,
-        titre = false,
         images = [],
         videos = [],
         bailleurId,
         idCommun,
-        etat="libre",
+        exemplaire,
         videosVirtuelle = {}
     }) {
         this.superficie = superficie
@@ -42,7 +41,7 @@ class Bureau {
         this.lon = lon
         this.lat = lat
         this.distanceGoudron = distanceGoudron
-        this.niveau = niveau
+        this.etape = etape
         this.nombrePieces = nombrePieces
         this.salleReunion = salleReunion
         this.accueil = accueil
@@ -52,12 +51,11 @@ class Bureau {
         this.toilettes = toilettes
         this.climatisation = climatisation
         this.internet = internet
-        this.titre = titre
         this.images = images
         this.videos = videos
         this.bailleurId = bailleurId
         this.idCommun = idCommun
-        this.etat = etat
+        this.exemplaire = exemplaire
         this.videosVirtuelle = videosVirtuelle
     }
 
@@ -71,7 +69,7 @@ class Bureau {
             superficie: this.superficie,
             forme: this.forme,
             dimension: this.dimension,
-            etat: this.etat, // libre, occuper, construction
+            exemplaire: this.etat, // libre, occuper, construction
 
             localisation: {
                 pays: this.pays,
@@ -84,15 +82,12 @@ class Bureau {
 
             distanceGoudron: this.distanceGoudron,
 
-            niveau: this.niveau,
+            etape: this.etape,
             nombrePieces: this.nombrePieces,
 
-            amenagement: {
-                salleReunion: this.salleReunion,
-                accueil: this.accueil
-            },
-
             equipements: {
+                salleReunion: this.salleReunion,
+                accueil: this.accueil,
                 parking: this.parking,
                 eau: this.eau,
                 electricite: this.electricite,
@@ -100,8 +95,6 @@ class Bureau {
                 climatisation: this.climatisation,
                 internet: this.internet
             },
-
-            titre: this.titre,
 
             images: this.images,
             videos: this.videos,

@@ -12,6 +12,7 @@ const SPECIAL_TYPES = [
   "bureau",
   "boutique",
   "terrain",
+  "logement"
 ];
 
 /**
@@ -65,58 +66,36 @@ const createBien = async ({
 
   const cleanData = formaterObjet(data);
 
-
-  /**
-   * La validation structurelle est faite
-   * par Zod.
-   */
-  const selectedTypes = SPECIAL_TYPES.filter(
-    (type) =>
-      cleanData[
-        `is${type[0].toUpperCase()}${type.slice(1)}`
-      ]
-  );
-
-  let type = "logement";
-
-  if (selectedTypes.length === 1) {
-    type = selectedTypes[0];
-  } else if (
-    SPECIAL_TYPES.includes(cleanData.type)
-  ) {
-    type = cleanData.type;
-  }
-
   
   let bien = null
   if(cleanData.typeBien == 'bureau'){
     bien = new Bureau({
-      ...cleanData?.data,
-       ...(cleanData?.data["localisation"] ?? {}),
+      ...cleanData,
+       ...(cleanData["localisation"] ?? {}),
       bailleurId,
       idCommun: createId(),
     }).toFireBase()
   }
   else if(cleanData.typeBien == 'boutique'){
     bien = new Boutique({
-      ...cleanData?.data,
-      ...(cleanData?.data["localisation"] ?? {}),
+      ...cleanData,
+      ...(cleanData["localisation"] ?? {}),
       bailleurId,
       idCommun: createId(),
     }).toFireBase()
   }
   else if(cleanData.typeBien == 'terrain'){
     bien = new Terrain({
-      ...cleanData?.data,
-      ...(cleanData?.data["localisation"] ?? {}),
+      ...cleanData,
+      ...(cleanData["localisation"] ?? {}),
       bailleurId,
       idCommun: createId(),
     }).toFireBase()
   }
   else if(cleanData.typeBien == 'logement'){
       bien = new Bien({
-      ...cleanData?.data,
-      ...(cleanData?.data["localisation"] ?? {}),
+      ...cleanData,
+      ...(cleanData["localisation"] ?? {}),
       bailleurId,
       idCommun: createId(),
     }).toFirebase()

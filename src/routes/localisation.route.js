@@ -12,6 +12,7 @@ RouterLocation.post("/research",async(req,res)=>{
                 data: []
             })
         }
+        console.log(process.env.GEO_KEY)
         const url = `https://api.geoapify.com/v1/geocode/autocomplete?text=${value}&limit=20&apiKey=${process.env.GEO_KEY}`
         const response = await fetch(url)
         if(!response.ok){

@@ -7,7 +7,7 @@ class Terrain {
         superficie,
         forme,
         dimension,
-        etat,
+        exemplaire,
         idCommun,
         pays = "Cameroun",
         ville,
@@ -25,7 +25,7 @@ class Terrain {
         this.type = type
         this.superficie = superficie
         this.forme = forme
-        this.etat = etat,
+        this.exemplaire = exemplaire,
         this.idCommun = idCommun
         this.dimension = dimension
         this.pays = pays
@@ -36,7 +36,6 @@ class Terrain {
         this.lat = lat
         this.bailleurId = bailleurId
         this.distanceGoudron = distanceGoudron
-        this.titre = titre
         this.images = images
         this.videos = videos
         this.videosVirtuelle = videosVirtuelle
@@ -47,7 +46,7 @@ class Terrain {
             idPublic: `Terr_${createId()}`,
             bailleurId: this.bailleurId,
             typeBien: "terrain",
-            etat: this.etat,
+            exemplaire: this.exemplaire,
             idCommun: this.idCommun,
             type: this.type,
             superficie: this.superficie,
@@ -64,7 +63,6 @@ class Terrain {
             },
 
             distanceGoudron: this.distanceGoudron,
-            titre: this.titre,
 
             images: this.images,
             videos: this.videos,

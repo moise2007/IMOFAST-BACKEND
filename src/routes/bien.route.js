@@ -9,7 +9,6 @@ const bienController = require("../controllers/bien.controller");
 
 const {
   validate,
-  createBienSchema,
   getBiensSchema,
   getBienSchema,
   updateBienSchema,
