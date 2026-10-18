@@ -5,17 +5,15 @@ const Timestamp = admin.firestore.Timestamp
 class Bureau {
     constructor({
         superficie,
-        forme,
         dimension,
         pays = "Cameroun",
         ville,
         quartier,
-        lieuDit = null,
+        adresse = null,
         lon = null,
         lat = null,
         distanceGoudron = null,
         etape = 0,
-        nombrePieces = 1,
         salleReunion = false,
         accueil = false,
         parking = false,
@@ -32,17 +30,15 @@ class Bureau {
         videosVirtuelle = {}
     }) {
         this.superficie = superficie
-        this.forme = forme
         this.dimension = dimension
         this.pays = pays
         this.ville = ville
         this.quartier = quartier
-        this.lieuDit = lieuDit
+        this.adresse = adresse
         this.lon = lon
         this.lat = lat
         this.distanceGoudron = distanceGoudron
         this.etape = etape
-        this.nombrePieces = nombrePieces
         this.salleReunion = salleReunion
         this.accueil = accueil
         this.parking = parking
@@ -67,15 +63,15 @@ class Bureau {
             idCommun : this.idCommun,
 
             superficie: this.superficie,
-            forme: this.forme,
+            forme: null,
             dimension: this.dimension,
-            exemplaire: this.etat, // libre, occuper, construction
+            exemplaire: this.exemplaire, // libre, occuper, construction
 
             localisation: {
                 pays: this.pays,
                 ville: this.ville,
                 quartier: this.quartier,
-                lieuDit: this.lieuDit,
+                adresse: this.adresse,
                 lon: this.lon,
                 lat: this.lat
             },
@@ -83,7 +79,6 @@ class Bureau {
             distanceGoudron: this.distanceGoudron,
 
             etape: this.etape,
-            nombrePieces: this.nombrePieces,
 
             equipements: {
                 salleReunion: this.salleReunion,

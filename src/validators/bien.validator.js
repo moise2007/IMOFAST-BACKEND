@@ -82,28 +82,6 @@ const exemplairesSchema = z
     }
   });
 
-/* -------------------------------------------------------------------------- */
-/*  Schémas par type                                                          */
-/* -------------------------------------------------------------------------- */
-
-const bureauSchema = z
-  .object({
-    ...commonSpecialShape,
-    forme: optStr(),
-    dimension: z.any().optional(),
-    niveau: z.coerce.number().int().optional(),
-    nombrePieces: z.coerce.number().int().positive().optional(),
-    salleReunion: flag(),
-    accueil: flag(),
-    parking: flag(),
-    eau: flag(),
-    electricite: flag(),
-    toilettes: flag(),
-    climatisation: flag(),
-    internet: flag(),
-    titre: flag(),
-  })
-  .strip();
 
 const boutiqueSchema = z
   .object({
@@ -154,6 +132,7 @@ const K = {
   chars: 'validation.chars_not_allowed',
   nameForbidden: 'validation.name_forbidden',
   tooMany: 'validation.too_many_entries',
+  etapeMax: "validation.etpage_max"
 };
  
 // Erreur de type : champ absent -> required, mauvais type -> invalid_type
@@ -287,7 +266,64 @@ const logementSchema = obj({
  
   equipements: optionsLibresSchema,
   environements: optionsLibresSchema,
+}).superRefine((data, ctx) => {
+  const { occuper, libre, construction } = data.exemplaire ?? {};
+  const { min, max } = data.etage ?? {};
+ 
+  if (![occuper, libre, construction, min, max].every(Number.isInteger)) return;
+ 
+  const total = occuper + libre + construction;
+  if (total === 0) return;
+ 
+  if (max < min && total > 1) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['etage', 'max'],
+      message: K.etapeMax,
+      params: { total, max },
+    });
+  }
 });
+
+const bureauSchema = z
+  .object({
+    superficie: superficieSchema,
+    typeBien:  choice(['logement', 'terrain', 'boutique', 'bureau']),
+    dimension: z.string().trim().optional().nullable(),
+    exemplaire: obj({
+      occuper: entier(),
+      libre: entier(),
+      construction: entier(),
+    }), 
+    salleReunion:  boolNullable,
+    accueil:  boolNullable,
+    parking:  boolNullable,
+    eau: compteurSchema,
+    electricite: compteurSchema,
+    toilettes:  boolNullable,
+    climatisation:  boolNullable,
+    internet:  boolNullable,
+
+    lon: coordonnee(-180, 180),
+    lat: coordonnee(-90, 90),
+    pays: texte().trim().min(2, K.strMin),
+    ville: texte().trim().min(2, K.strMin),
+    quartier: texte().trim().min(2, K.strMin),
+    adresse: texte().trim().optional(),
+
+    prixGoudron: montantSchema,
+    etage: obj({
+      min: entier(),
+      max: entier(),
+    }).refine((e) => e.max >= e.min, {
+      message: K.etage,
+      path: ['max'],
+    }),
+    
+    images: arr(urlStr()).min(4, K.arrMin).max(18, K.arrMax),
+    videos: arr(urlStr()).min(0, K.arrMin).max(5, K.arrMax),
+  })
+
 
 
 const ENTITY_SCHEMAS = {
@@ -328,8 +364,7 @@ const validateCreateBien = (req, res, next) => {
   const validator = ENTITY_SCHEMAS[type]
 
   const result = validator.safeParse(body)
-
-  console.log(result)
+  
   if(result.success){
     req.body = {
       ...result.data,
@@ -337,6 +372,7 @@ const validateCreateBien = (req, res, next) => {
     }
     return next()
   }
+  console.log("verification echouer")
   
   return res.status(400).json({
     success: false,
