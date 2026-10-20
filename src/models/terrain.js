@@ -3,7 +3,6 @@ const  {admin } = require("../config/firebase")
 const Timestamp = admin.firestore.Timestamp
 class Terrain {
     constructor({
-        type,
         superficie,
         forme,
         dimension,
@@ -12,17 +11,16 @@ class Terrain {
         pays = "Cameroun",
         ville,
         quartier,
-        lieuDit = null,
+        titreFontier=false,
+        adresse = null,
         lon = null,
         lat = null,
         distanceGoudron = null,
-        titre = false,
         images = [],
         videos = [],
         bailleurId,
         videosVirtuelle = {}
     }) {
-        this.type = type
         this.superficie = superficie
         this.forme = forme
         this.exemplaire = exemplaire,
@@ -31,9 +29,10 @@ class Terrain {
         this.pays = pays
         this.ville = ville
         this.quartier = quartier
-        this.lieuDit = lieuDit
+        this.adresse = adresse
         this.lon = lon
         this.lat = lat
+        this.titreFontier = titreFontier
         this.bailleurId = bailleurId
         this.distanceGoudron = distanceGoudron
         this.images = images
@@ -42,22 +41,55 @@ class Terrain {
     }
 
     toFireBase() {
+        function adapte(texte=""){
+            return texte
+            .toString()
+            .replace(/[,.:;]/g, " ")
+            .trim();
+        }
+        function prefixes(mot = "") {
+            mot = mot.toLowerCase();
+            const resultat = [];
+
+            for (let i = 1; i <= mot.length; i++) {
+                resultat.push(mot.slice(0, i));
+            }
+            return resultat;
+        }
+
+        let motCles = [
+            ...prefixes(this.ville),
+            ...prefixes(this.quatier),
+            ...adapte(this.adresse).toLowerCase().split(" "),
+            ...adapte(this.ville).toLowerCase().split(" "),
+            ...adapte(this.quartier).toLowerCase().split(" "),
+            ...adapte(this.pays).toLowerCase().split(" "),
+            ...adapte(this.adresse).normalize("NFD").split(" "),
+            ...adapte(this.ville).normalize("NFD").split(" "),
+            ...adapte(this.quartier).normalize("NFD").split(" "),
+            ...adapte(this.pays).normalize("NFD").split(" "),
+        ]
+
+        motCles = motCles.filter(word=>word?.length > 2)
+        motCles = [...new Set(motCles)]
+
         return {
             idPublic: `Terr_${createId()}`,
             bailleurId: this.bailleurId,
             typeBien: "terrain",
-            exemplaire: this.exemplaire,
+            exemplaire: {libre: this.exemplaire},
             idCommun: this.idCommun,
-            type: this.type,
             superficie: this.superficie,
+            titreFontier: this.titreFontier,
             forme: this.forme,
             dimension: this.dimension,
+            motCles,
 
             localisation: {
                 pays: this.pays,
                 ville: this.ville,
                 quartier: this.quartier,
-                lieuDit: this.lieuDit,
+                adresse: this.adresse,
                 lon: this.lon,
                 lat: this.lat,
             },

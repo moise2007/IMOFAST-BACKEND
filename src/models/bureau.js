@@ -13,12 +13,12 @@ class Bureau {
         lon = null,
         lat = null,
         distanceGoudron = null,
-        etape = 0,
+        etape = {min: 0, max: null},
         salleReunion = false,
         accueil = false,
         parking = false,
-        eau = false,
-        electricite = true,
+        eau = {type:"postpayer" , prix:null},
+        electricite = {type:"postpayer" , prix:null},
         toilettes = false,
         climatisation = false,
         internet = false,
@@ -26,7 +26,7 @@ class Bureau {
         videos = [],
         bailleurId,
         idCommun,
-        exemplaire,
+        exemplaire =  {occuper: 0, libre: 1, construction: 0},
         videosVirtuelle = {}
     }) {
         this.superficie = superficie
@@ -56,11 +56,43 @@ class Bureau {
     }
 
     toFireBase() {
+        function adapte(texte=""){
+            return texte
+            .toString()
+            .replace(/[,.:;]/g, " ")
+            .trim();
+        }
+        function prefixes(mot = "") {
+            mot = mot.toLowerCase();
+            const resultat = [];
+
+            for (let i = 1; i <= mot.length; i++) {
+                resultat.push(mot.slice(0, i));
+            }
+            return resultat;
+        }
+
+        let motCles = [
+            ...prefixes(this.ville),
+            ...prefixes(this.quartier),
+            ...adapte(this.adresse).toLowerCase().split(" "),
+            ...adapte(this.ville).toLowerCase().split(" "),
+            ...adapte(this.quartier).toLowerCase().split(" "),
+            ...adapte(this.pays).toLowerCase().split(" "),
+            ...adapte(this.adresse).normalize("NFD").split(" "),
+            ...adapte(this.ville).normalize("NFD").split(" "),
+            ...adapte(this.quartier).normalize("NFD").split(" "),
+            ...adapte(this.pays).normalize("NFD").split(" "),
+        ]
+
+        motCles = motCles.filter(word=>word?.length > 2)
+        motCles = [...new Set(motCles)]
         return {
             typeBien: "bureau",
             idPublic: `Bur_${createId()}`,
             bailleurId: this.bailleurId,
             idCommun : this.idCommun,
+            motCles,
 
             superficie: this.superficie,
             forme: null,

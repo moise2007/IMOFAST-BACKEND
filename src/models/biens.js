@@ -1,5 +1,5 @@
 const { admin } = require("../config/firebase")
-
+const { createId} = require("@paralleldrive/cuid2")
 const timestamp = admin.firestore.Timestamp
 class Bien {
     constructor({
@@ -40,7 +40,6 @@ class Bien {
         this.eau               = eau
         this.electricite       = electricite
         this.videos = videos
-        this.idPublic = idPublic
         this.devise = devise
         this.estProcheGoudron = estProcheGoudron
         this.prixGoudron = prixGoudron
@@ -102,7 +101,7 @@ class Bien {
             ...adapte(this.localisation?.quatier).normalize("NFD").split(" "),
             ...adapte(this.localisation?.pays).normalize("NFD").split(" "),
         ]
-        this.localisation = {...this.localisation,quatier:this.localisation?.quatier?.toLowerCase()}
+        this.localisation = {...this.localisation,quartier:this.localisation?.quartier?.toLowerCase()}
 
         motCles = motCles.filter(word=>word?.length > 2)
         motCles = [...new Set(motCles)]
@@ -113,9 +112,10 @@ class Bien {
             idPublic: this.idPublic,
             description: this.desccription,
             typeBien: "logement",
+            idPublic: `log_${createId()}`,
 
             //  Localisation 
-            localisation: {lon:null, lat:null,ville:null,adresse:null,quatier:null,...this.localisation}, 
+            localisation: {lon:null, lat:null,ville:null,adresse:null,quartier:null,...this.localisation}, 
             prixGoudron: this.prixGoudron,
             estProcheGoudron: this.estProcheGoudron,
             type: this.type,
@@ -123,20 +123,20 @@ class Bien {
             mode: this.mode,
             motCles,
             chambres :{
-                nombre: this.chambres?.nombre ?? 1,
-                image: this.chambres?.image ?? null
+                nombre: this.chambres ?? 1,
+                image: null
             },
             salons:{
-                nombre: this.salons?.nombre ?? 0,
-                image: this.salons?.image ?? null
+                nombre: this.salons ?? 0,
+                image: null
             },
             salleBains:{
-                nombre: this.salleBains?.nombre ?? 0,
-                image: this.salleBains?.image ?? null
+                nombre: this.salleBains ?? 0,
+                image: null
             },
             cuisines : {
-                nombre: this.cuisines?.nombre ?? 0,
-                image: this.cuisines?.image ?? null
+                nombre: this.cuisines ?? 0,
+                image: null
             },
             
 
@@ -146,8 +146,8 @@ class Bien {
             
 
             //  Caractéristiques physiques 
-            exemplaires: this.exemplaire ?? {occuper: 0, disponible: 1 , construction: 0},
-            superficie:this.superficie ?? 0, // m²
+            exemplaire: this.exemplaire ?? {occuper: 0, disponible: 1 , construction: 0},
+            superficie:this.superficie ?? 10, // m²
 
             niveauFinition: this?.niveauFinition ?? "standard",
             etage:             this.etage ?? {min: null , max:null},
@@ -170,7 +170,7 @@ class Bien {
                 jardin: this.equipements?.jardin ?? null,
                 piscine: this.equipements?.piscine ?? null,
                 ascenseur: this.equipements?.ascenseur ?? null,
-                autres: this.equipements?.autres ?? {}
+                ...this.equipements,
             },
 
             //  Environnement proche 
@@ -184,8 +184,8 @@ class Bien {
 
             //  Réseaux 
             securite: this.securite ?? {gardien: null , camera: null, barriere:null},
-            eau: this.eau ?? {type:null , prix:null},
-            electricite: this.electricite ??{type:null , prix:null},
+            eau: this.eau ?? {type:"postpayer" , prix:null},
+            electricite: this.electricite ??{type:"postpayer" , prix:null},
             devise: this.devise,
             hasPublication:false,
             idLocataire: null,

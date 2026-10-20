@@ -5,14 +5,7 @@ const { z } = require("zod");
 /* -------------------------------------------------------------------------- */
 
 const MAX_EXEMPLAIRES = 5000;
-const ETATS = ["libre", "occuper", "construction"];
 
-/** type spécial -> nom du flag envoyé par le client */
-const SPECIAL_TYPES = {
-  bureau: "isBureau",
-  boutique: "isBoutique",
-  terrain: "isTerrain",
-};
 
 const emptyToUndefined = (v) =>
   v === "" || v === "null" || v === "undefined" ? undefined : v;
@@ -25,33 +18,9 @@ const booleanFromQuery = (v) => {
 
 const str = () => z.string().trim();
 const optStr = () => z.preprocess(emptyToUndefined, str().optional());
-const num = () => z.coerce.number();
-const coord = () =>
-  z.preprocess(emptyToUndefined, z.coerce.number().nullable().optional());
-const flag = () => z.boolean().optional();
 
-/* -------------------------------------------------------------------------- */
-/*  Blocs communs                                                             */
-/* -------------------------------------------------------------------------- */
 
-/** Champs communs à bureau / boutique / terrain (voir les modèles) */
-const commonSpecialShape = {
-  superficie: num().positive("La superficie doit être supérieure à 0"),
-  pays: optStr(),
-  ville: str().min(1, "La ville est obligatoire"),
-  quartier: str().min(1, "Le quartier est obligatoire"),
-  lieuDit: optStr(),
-  lon: coord(),
-  lat: coord(),
-  distanceGoudron: z.preprocess(
-    emptyToUndefined,
-    num().nonnegative().nullable().optional()
-  ),
-  idCommun: optStr(),
-  images: z.array(z.any()).optional(),
-  videos: z.array(z.any()).optional(),
-  videosVirtuelle: z.record(z.any()).optional(),
-};
+
 
 /** { libre|disponible, occuper, construction } -> entiers >= 0 */
 const exemplairesSchema = z
@@ -83,35 +52,12 @@ const exemplairesSchema = z
   });
 
 
-const boutiqueSchema = z
-  .object({
-    ...commonSpecialShape,
-    etage: z.coerce.number().int().optional(),
-    nombrePieces: z.coerce.number().int().positive().optional(),
-    parking: flag(),
-    eau: flag(),
-    electricite: flag(),
-    toilettes: flag(),
-    climatisation: flag(),
-  })
-  .strip();
-
-const terrainSchema = z
-  .object({
-    ...commonSpecialShape,
-    type: optStr(), // ex : constructible, agricole...
-    forme: optStr(),
-    dimension: z.any().optional(),
-    titre: flag(),
-  })
-  .strip();
 
 
 
-const hasImages = (images) =>
-  Array.isArray(images)
-    ? images.length > 0
-    : !!images && Object.keys(images).length > 0;
+
+
+
 
 
 const K = {
@@ -134,10 +80,10 @@ const K = {
   tooMany: 'validation.too_many_entries',
   etapeMax: "validation.etpage_max"
 };
- 
+
 // Erreur de type : champ absent -> required, mauvais type -> invalid_type
 const typeError = (iss) => (iss.input === undefined ? K.required : K.invalidType);
- 
+
 // ---------- Constructeurs de base ----------
 const texte = () => z.string({ error: typeError });
 const nombre = () => z.number({ error: typeError });
@@ -149,11 +95,11 @@ const choice = (values) =>
   z.enum(values, {
     error: (iss) => (iss.input === undefined ? K.required : K.choice),
   });
- 
+
 const boolNullable = bool().nullable();
 const entier = () => int().min(0, K.numMin); // entier >= 0
 const urlStr = () => texte().url(K.url);
- 
+
 // ---------- Schémas réutilisables ----------
 const coordonnee = (min, max) =>
   z.preprocess(
@@ -164,7 +110,7 @@ const coordonnee = (min, max) =>
       .max(max, K.numMax)
       .optional(),
   );
- 
+
 // Clés libres : 50 caractères max par nom, 50 entrées max
 const optionsLibresSchema = z
   .record(
@@ -180,7 +126,7 @@ const optionsLibresSchema = z
     { error: typeError },
   )
   .refine((o) => Object.keys(o).length <= 50, { message: K.tooMany });
- 
+
 // Nombre ou chaîne de chiffres -> nombre
 const montantSchema = z
   .union(
@@ -191,16 +137,16 @@ const montantSchema = z
     { error: (iss) => (iss.input === undefined ? K.required : K.amount) },
   )
   .transform((v) => Number(v));
- 
+
 const compteurSchema = obj({
   type: choice(['postpayer', 'prepayer', 'fixe']),
   prix: montantSchema,
 });
- 
+
 const superficieSchema = montantSchema.refine((v) => v > 0, {
   message: K.superficie,
 });
- 
+
 // ---------- Schéma principal ----------
 const logementSchema = obj({
   type: choice(['maison', 'appartement', 'studio', 'chambre', 'villa', 'duplex']),
@@ -208,13 +154,13 @@ const logementSchema = obj({
   nature: choice(['moderne', 'simple', 'meubler']),
   description: texte().trim().max(2000, K.strMax).default(''),
   mode: choice(['complet', 'rapide']),
- 
+
   exemplaire: obj({
     occuper: entier(),
     libre: entier(),
     construction: entier(),
   }),
- 
+
   localisation: obj({
     lon: coordonnee(-180, 180),
     lat: coordonnee(-90, 90),
@@ -223,13 +169,13 @@ const logementSchema = obj({
     quartier: texte().trim().min(2, K.strMin),
     adresse: texte().trim().optional(),
   }),
- 
+
   prixGoudron: montantSchema,
   devise: choice(['XAF', 'EUR', 'USD']),
   images: arr(urlStr()).min(4, K.arrMin).max(18, K.arrMax),
   videos: arr(urlStr()).min(0, K.arrMin).max(5, K.arrMax),
   superficie: superficieSchema,
- 
+
   securite: obj({
     gardien: boolNullable,
     camera: boolNullable,
@@ -238,24 +184,24 @@ const logementSchema = obj({
     eclairagePublic: boolNullable,
     Conciergerie: boolNullable,
   }),
- 
+
   eau: compteurSchema,
   electricite: compteurSchema,
   estProcheGoudron: boolNullable,
- 
+
   chambres: entier(),
   salleBains: entier(),
   cuisines: entier(),
   salons: entier(),
- 
+
   etage: obj({
     min: entier(),
-    max: entier(),
+    max: entier().nullable(),
   }).refine((e) => e.max >= e.min, {
     message: K.etage,
     path: ['max'],
   }),
- 
+
   niveauFinition: choice([
     'fini',
     'bon_standing',
@@ -263,18 +209,18 @@ const logementSchema = obj({
     'luxe',
     'tres_haut_standing',
   ]),
- 
+
   equipements: optionsLibresSchema,
   environements: optionsLibresSchema,
 }).superRefine((data, ctx) => {
   const { occuper, libre, construction } = data.exemplaire ?? {};
   const { min, max } = data.etage ?? {};
- 
+
   if (![occuper, libre, construction, min, max].every(Number.isInteger)) return;
- 
+
   const total = occuper + libre + construction;
   if (total === 0) return;
- 
+
   if (max < min && total > 1) {
     ctx.addIssue({
       code: 'custom',
@@ -288,21 +234,21 @@ const logementSchema = obj({
 const bureauSchema = z
   .object({
     superficie: superficieSchema,
-    typeBien:  choice(['logement', 'terrain', 'boutique', 'bureau']),
+    typeBien: choice(['logement', 'terrain', 'boutique', 'bureau']),
     dimension: z.string().trim().optional().nullable(),
     exemplaire: obj({
       occuper: entier(),
       libre: entier(),
       construction: entier(),
-    }), 
-    salleReunion:  boolNullable,
-    accueil:  boolNullable,
-    parking:  boolNullable,
+    }),
+    salleReunion: boolNullable,
+    accueil: boolNullable,
+    parking: boolNullable,
     eau: compteurSchema,
     electricite: compteurSchema,
-    toilettes:  boolNullable,
-    climatisation:  boolNullable,
-    internet:  boolNullable,
+    toilettes: boolNullable,
+    climatisation: boolNullable,
+    internet: boolNullable,
 
     lon: coordonnee(-180, 180),
     lat: coordonnee(-90, 90),
@@ -314,16 +260,73 @@ const bureauSchema = z
     prixGoudron: montantSchema,
     etage: obj({
       min: entier(),
-      max: entier(),
+      max: entier().nullable(),
     }).refine((e) => e.max >= e.min, {
       message: K.etage,
       path: ['max'],
     }),
-    
+
     images: arr(urlStr()).min(4, K.arrMin).max(18, K.arrMax),
     videos: arr(urlStr()).min(0, K.arrMin).max(5, K.arrMax),
   })
 
+const boutiqueSchema = z
+  .object({
+    superficie: superficieSchema,
+    typeBien: choice(['logement', 'terrain', 'boutique', 'bureau']),
+    lon: coordonnee(-180, 180),
+    lat: coordonnee(-90, 90),
+    pays: texte().trim().min(2, K.strMin),
+    ville: texte().trim().min(2, K.strMin),
+    quartier: texte().trim().min(2, K.strMin),
+    adresse: texte().trim().optional(),
+    gardien:  boolNullable,
+    camera:  boolNullable,
+    eclairagePublic:  boolNullable,
+    prixGoudron :  montantSchema,
+    etage: obj({
+      min: entier(),
+      max: entier().optional(),
+    }).refine((e) => e.max >= e.min, {
+      message: K.etage,
+      path: ['max'],
+    }),
+    exemplaire :  exemplairesSchema,
+    parking :  boolNullable,
+    eau :  compteurSchema,
+    electricite :  compteurSchema,
+    toilettes :  boolNullable,
+    climatisation :  boolNullable,
+    espaceStockage :  boolNullable,
+    marche :  boolNullable,
+    supermarche :  boolNullable,
+    banque :  boolNullable,
+    pharmacie :  boolNullable,
+    ecole :  boolNullable,
+    station :  boolNullable,
+    hopital :  boolNullable,
+    images: arr(urlStr()).min(4, K.arrMin).max(18, K.arrMax),
+    videos: arr(urlStr()).min(0, K.arrMin).max(5, K.arrMax),
+  })
+
+const terrainSchema = z
+  .object({
+    superficie: superficieSchema,
+    typeBien: choice(['logement', 'terrain', 'boutique', 'bureau']),
+    dimension: z.string().trim().optional().nullable(),
+    lon: coordonnee(-180, 180),
+    lat: coordonnee(-90, 90),
+    pays: texte().trim().min(2, K.strMin),
+    ville: texte().trim().min(2, K.strMin),
+    quartier: texte().trim().min(2, K.strMin),
+    adresse: texte().trim().optional(),
+    prixGoudron: montantSchema,
+    images: arr(urlStr()).min(4, K.arrMin).max(18, K.arrMax),
+    videos: arr(urlStr()).min(0, K.arrMin).max(5, K.arrMax),
+    forme: choice(["rectangle", "carre", "triangle", "trapeze", "autres"]),
+    titreFontier: boolNullable,
+    exemplaire: montantSchema,
+  })
 
 
 const ENTITY_SCHEMAS = {
@@ -357,15 +360,15 @@ const validateCreateBien = (req, res, next) => {
   const body = req.body ?? {};
   const type = body?.typeBien;
 
-  if (!["logement","boutique","bureau","terrain"].includes(body?.typeBien)) {
+  if (!["logement", "boutique", "bureau", "terrain"].includes(body?.typeBien)) {
     return fail(res, [{ champ: "type", message: "le type de bien est invalide" }]);
   }
 
   const validator = ENTITY_SCHEMAS[type]
 
   const result = validator.safeParse(body)
-  
-  if(result.success){
+
+  if (result.success) {
     req.body = {
       ...result.data,
       typeBien: type
@@ -373,13 +376,13 @@ const validateCreateBien = (req, res, next) => {
     return next()
   }
   console.log("verification echouer")
-  
+
   return res.status(400).json({
     success: false,
     message: "les donnees sont invalides",
     errors: zodErrors(result.error)
   })
-  
+
 };
 
 /* -------------------------------------------------------------------------- */
