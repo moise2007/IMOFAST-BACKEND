@@ -98,10 +98,30 @@ const deleteBienBailleur = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * Srecuperes les statiques sur les biens d'un bailleur
+ */
+const getStatsBiensBailleur = asyncHandler(async (req, res) => {
+  const stats = await bienService.getStatsBien({
+    bailleurId: req.user.idPublic,
+  });
+
+  return res.status(200).json({
+    success: true,
+    stats,
+    message: req.t("success.delete_bien", {
+      ns: "responses",
+    }),
+  });
+});
+
+
+
 module.exports = {
   createBienBailleur,
   getAllBien,
   getDetailBien,
   updateBienBailleur,
   deleteBienBailleur,
+  getStatsBiensBailleur ,
 };

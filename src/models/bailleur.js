@@ -1,5 +1,6 @@
 const {createId} = require("@paralleldrive/cuid2")
 const { admin } = require("../config/firebase")
+const { calculerCompletudeBailleur } = require("../utils/completudeProfil/completudeProfil.bailleur.utils")
 const timestamp = admin.firestore.Timestamp
 class Bailleur{
     constructor({
@@ -45,7 +46,7 @@ class Bailleur{
 
     }
 
-    toFirebase(){
+    toDataBase(){
         return{
             nom: this.nom,
             prenom: this.prenom,
@@ -72,18 +73,16 @@ class Bailleur{
             dateSuspension : null,
             dateBlackList: null,
 
-            isVerifie: false,
-            isCertifie: false,
-
             verification: {
                 emailVerifie : this.emailVerifie,
                 telephoneVerifie : null,
-                cniVerifie: false,
-                cniVerifieAt: null,
-                estDigne: false,
+                cniVerified: false,
+                cniVerifiedAt: null,
                 isVerified: false,
                 isCertified: false,
             },
+
+            
             score:{
                 global: 40,
                 badge: "bronze",
@@ -123,6 +122,17 @@ class Bailleur{
             createdAt: timestamp.now(),
             updatedAt: timestamp.now(),
             lastConnexion: timestamp.now()
+        }
+    }
+
+    toFirebase(){
+        const bailleur = this.toDataBase()
+        return {
+            ...bailleur,
+            notation: {
+                ...bailleur.notation,
+                completudeProfilPourcentage: calculerCompletudeBailleur(bailleur).pourcentage
+            }
         }
     }
 }

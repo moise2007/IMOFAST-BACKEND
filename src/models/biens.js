@@ -12,10 +12,8 @@ class Bien {
         eau,
         videos,
         electricite,
-        idPublic,
         devise,
         prixGoudron,
-        estProcheGoudron,
         nature,
         chambres,
         salleBains,cuisines,
@@ -41,7 +39,6 @@ class Bien {
         this.electricite       = electricite
         this.videos = videos
         this.devise = devise
-        this.estProcheGoudron = estProcheGoudron
         this.prixGoudron = prixGoudron
         this.nature= nature
         this.chambres= chambres
@@ -106,6 +103,8 @@ class Bien {
         motCles = motCles.filter(word=>word?.length > 2)
         motCles = [...new Set(motCles)]
 
+        this.estProcheGoudron = !Boolean(this.prixGoudron > 100 || this.prixGoudron)
+
         return {
             //  Référence 
             bailleurId:this.bailleurId,
@@ -121,6 +120,7 @@ class Bien {
             type: this.type,
             nature: this.nature,
             mode: this.mode,
+            
             motCles,
             chambres :{
                 nombre: this.chambres ?? 1,
@@ -150,7 +150,7 @@ class Bien {
             superficie:this.superficie ?? 10, // m²
 
             niveauFinition: this?.niveauFinition ?? "standard",
-            etage:             this.etage ?? {min: null , max:null},
+            etage: his.etage ?? {min: 0 , max:null},
             // pour duplex/villa : nombre total d'étages du bien
             equipements: {
                 lit: this.equipements?.lit ?? null,
@@ -179,7 +179,7 @@ class Bien {
                 marche: this.environements?.marche?? null,
                 hopital: this.environements?.hopital?? null,
                 axePrincipal: this.environements?.axePrincipal?? null,
-                autres: this.environements?.autres?? {},
+                ...this.environements
             },
 
             //  Réseaux 
@@ -188,7 +188,7 @@ class Bien {
             electricite: this.electricite ??{type:"postpayer" , prix:null},
             devise: this.devise,
             hasPublication:false,
-            idLocataire: null,
+            locataires: [],
             canPublier: true,
 
             tauxCompletude: this.tauxCompletude ??  20,

@@ -3,6 +3,7 @@ const express = require("express");
 const {
   authAdminLocataire,
   authBailleurLocataireAdmin,
+  authBailleurAdmin,
 } = require("../middlewares/auth");
 
 const bienController = require("../controllers/bien.controller");
@@ -29,6 +30,15 @@ routerBien.post(
 );
 
 /**
+ * Récupérer les statisques sur les biens bailleur
+ */
+routerBien.get(
+  "/stats",
+  authBailleurAdmin,
+  bienController.getStatsBiensBailleur
+);
+
+/**
  * Récupérer la liste des biens.
  */
 routerBien.get(
@@ -47,6 +57,8 @@ routerBien.get(
   validate(getBienSchema, "params"),
   bienController.getDetailBien
 );
+
+
 
 /**
  * Modifier un bien.

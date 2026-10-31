@@ -71,8 +71,7 @@ class Annonce {
             estPubliee: true,
             datePublication: new Date().toISOString(),
             dateExpiration:  this.dateExpiration ?? null,
-            likes: [],
-            notes: [],
+            notes: {},
             metaData: {
                 note: this.metaData?.note ?? 20
             },

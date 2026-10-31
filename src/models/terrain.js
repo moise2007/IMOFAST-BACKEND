@@ -15,7 +15,7 @@ class Terrain {
         adresse = null,
         lon = null,
         lat = null,
-        distanceGoudron = null,
+        prixGoudron= null,
         images = [],
         videos = [],
         bailleurId,
@@ -34,7 +34,7 @@ class Terrain {
         this.lat = lat
         this.titreFontier = titreFontier
         this.bailleurId = bailleurId
-        this.distanceGoudron = distanceGoudron
+        this.prixGoudron = prixGoudron
         this.images = images
         this.videos = videos
         this.videosVirtuelle = videosVirtuelle
@@ -94,10 +94,14 @@ class Terrain {
                 lat: this.lat,
             },
 
-            distanceGoudron: this.distanceGoudron,
+            prixGoudron: this.prixGoudron,
 
             images: this.images,
             videos: this.videos,
+
+            devise: "XAF",
+            hasPublication:false,
+            canPublier: true,
             videosVirtuelle: this.videosVirtuelle,
 
             createdAt: Timestamp.now(),

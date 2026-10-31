@@ -8,23 +8,22 @@ class Currency{
         const base = 'USD'
         const output = 'json'
 
-        // try{
-        //     const response = await fetch(`https://currencyapi.net/api/v2/rates?base=${base}&output=${output}&key=${key}`,{
-        //         headers : {"Accept" : "application/json"}
-        //     })
-        //     const data = await response.json()
-        //     if(!data.valid){
-        //         return this.initialize()
-        //     }
-        //     this.currency = data.rates
-        //     console.log("monnaie bien initialiser")
-        //     return data.rates
-        // }
-        // catch(err){
-        //     console.log("error currency : "+err)
-        //     return null
-        // }
-        return {XAF:600, EUR: 650,EURO: 650}
+        try{
+            const response = await fetch(`https://currencyapi.net/api/v2/rates?base=${base}&output=${output}&key=${key}`,{
+                headers : {"Accept" : "application/json"}
+            })
+            const data = await response.json()
+            if(!data.valid){
+                return this.initialize()
+            }
+            this.currency = data.rates
+            console.log("monnaie bien initialiser")
+            return data.rates
+        }
+        catch(err){
+            console.log("error currency : "+err)
+            return null
+        }
     }
     
     static async autoUpdateCurrency(){

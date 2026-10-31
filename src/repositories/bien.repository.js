@@ -1,4 +1,5 @@
 const { db, admin } = require("../config/firebase");
+const AppError = require("../errors/AppError");
 
 const COLLECTION = "bien";
 const ANNONCE_COLLECTION = "annonce";
@@ -31,6 +32,81 @@ const findByPublicId = async (idPublic) => {
     documentId: document.id,
   };
 };
+
+/**
+ * permet de recuperer les statisques sur les biens d'un bailleur
+ * @param {String} bailleurId 
+ * @returns 
+ */
+const getStatistiquesByBailleurId = async (bailleurId) => {
+    if (!bailleurId) {
+        throw new AppError("vous n'etes pas autoriser.",403);
+    }
+
+    const snapshot = await db
+        .collection(COLLECTION)
+        .where("bailleurId", "==", bailleurId)
+        .get();
+
+    const statistiques = {
+        total: 0,
+        libre: 0,
+        construction: 0,
+        occuper: 0,
+        parType: {},
+    };
+
+    snapshot.docs.forEach((document) => {
+        const bien = document.data();
+
+        const type = bien.typeBien;
+        const exemplaire = bien.exemplaire;
+
+        if (!type) return;
+
+        if (!statistiques.parType[type]) {
+            statistiques.parType[type] = {
+                total: 0,
+                libre: 0,
+                construction: 0,
+                occuper: 0,
+            };
+        }
+
+        const statsType = statistiques.parType[type];
+        let total = 0
+        if(typeof exemplaire == "string" || typeof exemplaire == "number"){
+
+          const nombre = typeof exemplaire == "string" 
+          ?  Number.isNaN(exemplaire) ? 0 : Number(nombre)
+          : exemplaire 
+           
+          statistiques["libre"] += nombre;
+          total += nombre
+          statsType["libre"] += nombre;
+        }
+        if ( exemplaire && typeof exemplaire === "object" && !Array.isArray(exemplaire) ) {
+            ["libre", "construction", "occuper"].forEach((etat) => {
+                const valeur = exemplaire[etat];
+
+                const nombre = typeof valeur === "number"
+                        ? Math.max(0, valeur)
+                        : Number.isNaN(valeur)
+                        ? 0
+                        : parseInt(valeur)
+                total += nombre
+                statistiques[etat] += nombre;
+                statsType[etat] += nombre;
+            });
+        }
+
+        statistiques.total += total;
+        statsType.total +=total;
+    });
+
+    return statistiques;
+};
+
 
 /**
  * Recherche un bien appartenant à un bailleur.
@@ -517,5 +593,6 @@ module.exports = {
   updateByPublicId,
   deleteByPublicId,
   deleteAllByQuery,
+  getStatistiquesByBailleurId,
   list,
 };

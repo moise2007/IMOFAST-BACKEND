@@ -6,9 +6,11 @@ const { Currency } = require("./services/auto/monnaie.auto")
 const { Users } = require("./services/auto/usersGetting")
 const { demarrerAutoAnnonce } = require("./services/auto/authAnnonce")
 const { initSocket } = require("./config/socket.io")
-const { initCache } = require("./cache/cache.index")
+const { initCache, autoSaveCache } = require("./cache/cache.index")
 
 const {db} = require("./config/firebase")
+const { calculerCompletudeProfil } = require("./utils/completudeProfil/completudeProfil.locataire.utils")
+const { locataireComplet, locataireTest } = require("./__mock__/locataireTest")
 // chargement de firebase
 require("./config/firebase")
 
@@ -44,11 +46,16 @@ async function startServer(){
         /*============================================
         = service l'automatisation
         =============================================*/
+        const data = calculerCompletudeProfil(locataireTest)
+        console.log(data)
         await Currency.autoUpdateCurrency()
         await Users.getCacheContact()
         demarrerAutoAnnonce()
         await initCache()
+        autoSaveCache()
         console.log("tous est pret")
+
+        
 
         
     }catch(err){

@@ -7,6 +7,7 @@ const { Boutique } = require("../../models/Boutique");
 const { Bien } = require("../../models/biens");
 const { Terrain } = require("../../models/terrain");
 const AppError = require("../../errors/AppError");
+const { statsBienBailleurCache } = require("../../cache/stasBien.bailleur.cache");
 
 const SPECIAL_TYPES = [
   "bureau",
@@ -203,6 +204,19 @@ const getBiens = async ({
   };
 };
 
+const getStatsBien = async({bailleurId})=>{
+  // verification si les donnes sont dans le cache
+  let stats = statsBienBailleurCache.getItem(bailleurId)
+  if(!stats.success || !stats.data){
+    stats = await bienRepository.getStatistiquesByBailleurId(bailleurId)
+    if(!stats){
+      throw new AppError("une erreur inconue est survenue",400)
+    }
+    statsBienBailleurCache.setItem(bailleurId,{...stats})
+  }
+  return stats
+}
+
 /**
  * Modifie un bien.
  *
@@ -306,4 +320,5 @@ module.exports = {
   getBiens,
   updateBien,
   deleteBien,
-};
+  getStatsBien
+}

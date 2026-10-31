@@ -8,12 +8,13 @@ class Bureau {
         dimension,
         pays = "Cameroun",
         ville,
+        securite,
         quartier,
         adresse = null,
         lon = null,
         lat = null,
         distanceGoudron = null,
-        etape = {min: 0, max: null},
+        etage = {min: 0, max: null},
         salleReunion = false,
         accueil = false,
         parking = false,
@@ -25,7 +26,9 @@ class Bureau {
         images = [],
         videos = [],
         bailleurId,
+        prixGoudron,
         idCommun,
+        environement,
         exemplaire =  {occuper: 0, libre: 1, construction: 0},
         videosVirtuelle = {}
     }) {
@@ -38,7 +41,7 @@ class Bureau {
         this.lon = lon
         this.lat = lat
         this.distanceGoudron = distanceGoudron
-        this.etape = etape
+        this.etage = etage
         this.salleReunion = salleReunion
         this.accueil = accueil
         this.parking = parking
@@ -51,6 +54,9 @@ class Bureau {
         this.videos = videos
         this.bailleurId = bailleurId
         this.idCommun = idCommun
+        this.prixGoudron = prixGoudron
+        this.securite = securite
+        this.environement = environement
         this.exemplaire = exemplaire
         this.videosVirtuelle = videosVirtuelle
     }
@@ -87,12 +93,15 @@ class Bureau {
 
         motCles = motCles.filter(word=>word?.length > 2)
         motCles = [...new Set(motCles)]
+
+        this.estProcheGoudron = !Boolean(this.prixGoudron > 100 || this.prixGoudron)
         return {
             typeBien: "bureau",
             idPublic: `Bur_${createId()}`,
             bailleurId: this.bailleurId,
             idCommun : this.idCommun,
             motCles,
+            locataires: [],
 
             superficie: this.superficie,
             forme: null,
@@ -107,10 +116,15 @@ class Bureau {
                 lon: this.lon,
                 lat: this.lat
             },
+            securite: this.securite ?? {},
+            environement: this.environement ?? {},
 
-            distanceGoudron: this.distanceGoudron,
+            prixGoudron: this.prixGoudron,
+            estProcheGoudron: this.estProcheGoudron,
 
-            etape: this.etape,
+            etage: this.etage,
+            eau: this.eau,
+            electricite: this.electricite,
 
             equipements: {
                 salleReunion: this.salleReunion,
@@ -126,6 +140,11 @@ class Bureau {
             images: this.images,
             videos: this.videos,
             videosVirtuelle: this.videosVirtuelle,
+
+            hasPublication:false,
+            idLocataire: null,
+            canPublier: true,
+            devise: "XAF",
 
             createdAt: Timestamp.now(),
             updateAt: Timestamp.now()

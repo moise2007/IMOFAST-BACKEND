@@ -101,6 +101,7 @@ class Boutique {
 
         motCles = motCles.filter(word=>word?.length > 2)
         motCles = [...new Set(motCles)]
+        this.estProcheGoudron = !Boolean(this.prixGoudron > 100 || this.prixGoudron)
 
         return {
             typeBien: "boutique",
@@ -109,6 +110,7 @@ class Boutique {
             idCommun : this.idCommun,
             superficie: this.superficie,
             motCles,
+            locataires: [],
             localisation: {
                 pays: this.pays,
                 ville: this.ville,
@@ -133,6 +135,7 @@ class Boutique {
             },
 
             prixGoudron: this.prixGoudron,
+            estProcheGoudron : this.estProcheGoudron,
 
             etage: this.etage,
             exemplaire: this.exemplaire,
@@ -148,6 +151,10 @@ class Boutique {
 
 
             images: this.images,
+            devise: "XAF",
+            hasPublication:false,
+            idLocataire: null,
+            canPublier: true,
             videos: this.videos,
             videosVirtuelle: this.videosVirtuelle,
 
