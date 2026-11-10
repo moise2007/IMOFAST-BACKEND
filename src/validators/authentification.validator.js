@@ -298,21 +298,15 @@ const canUseIdentifiantSchema = (body = {}) => {
         role,
     } = body;
 
-    if (
-        email !== undefined &&
-        email !== null &&
-        !isValidEmail(email)
-    ) {
-        throw new AppError( "L'adresse email est invalide.", 400);
+    const emailValid = email == undefined || email == null ||  isValidEmail(email)
+    
+    const telephoneValid = telephone == undefined ||  telephone == null || isValidTelephone(telephone)
+
+    if (!emailValid && !telephoneValid) {
+
+        throw new AppError( "L'adresse email ou le Le numéro de téléphone est invalide.", 400);
     }
 
-    if (
-        telephone !== undefined &&
-        telephone !== null &&
-        !isValidTelephone(telephone)
-    ) {
-        throw new AppError( "Le numéro de téléphone est invalide.",400);
-    }
 
     if (!isValidRole(role)) {
         throw new AppError( "Le rôle doit être 'bailleur' ou 'locataire'.",422);
@@ -379,12 +373,12 @@ const verifyOtpSchema = (body = {}) => {
  */
 const verifyEmailSchema = (body = {}) => {
     const {
-        email,
+        identifiant,
         code,
         role,
     } = body;
 
-    if (!isValidEmail(email)) {
+    if (!isValidEmail(identifiant)) {
         throw new AppError(
             "L'adresse email est invalide."
         );

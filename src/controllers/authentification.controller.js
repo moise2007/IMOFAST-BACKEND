@@ -1,5 +1,7 @@
+const crypto = require('node:crypto')
+const { db } = require("../config/firebase");
 const authentificationService = require("../services/ApiService/authentification.service");
-const { setCookieSession } = require("../utils/session");
+const { setCookieSession, envoyerTokens, creerSession, createAccessToken } = require("../utils/session");
 
 /**
  * Crée un nouveau compte utilisateur.
@@ -12,14 +14,9 @@ const { setCookieSession } = require("../utils/session");
  */
 const register = async (req, res) => {
     const result = await authentificationService.register(req.body);
-    // creation des cookies
-    setCookieSession(res,result?.sessionId,req.body.role)
-
-    res.status(201).json({
-        success: true,
-        message: "Compte créé avec succès.",
-        data: result,
-    });
+    // creation des cookies et envoie des tokens
+    const data = await creerSession(result.user.id, result.user.role ?? result.role)
+    envoyerTokens(req,res, {...data,user: result.user},"votre compte a ete creer avec success")
 };
 
 /**
@@ -31,15 +28,11 @@ const register = async (req, res) => {
  */
 const login = async (req, res) => {
     const result = await authentificationService.login(req.body);
+    
 
-    // creation des cookies
-    setCookieSession(res,result?.sessionId,req.body.role)
-
-    res.status(200).json({
-        success: true,
-        message: "Connexion réussie.",
-        data: result,
-    });
+    // creation des cookies et envoie des tokens
+    const data = await creerSession(result.user.id, result.user.role ?? result.role)
+    envoyerTokens(req,res, {...data,user:result.user},"connexion a votre compte reussie")
 };
 
 /**
@@ -52,9 +45,9 @@ const login = async (req, res) => {
 const logout = async (req, res) => {
     await authentificationService.logout(req.sessionId);
 
-    res.clearCookie("token");
-    res.clearCookie("role");
-    res.status(204).send();
+    res.clearCookie("token", { path: "/" })
+    res.clearCookie("refresh", { path: "/api/auth/refresh" })
+    res.json({ success: true })
 };
 
 /**
@@ -88,6 +81,7 @@ const verifyGoogle = async (req, res) => {
 const canUseIdentifiant = async (req, res) => {
     const result = await authentificationService.canUseIdentifiant(req.body);
 
+    console.log(result)
     res.status(200).json({
         success: true,
         connexion: result.exist,
@@ -250,6 +244,44 @@ const forgotPasswordUpdate = async (req, res) => {
     });
 };
 
+/**
+ * permet de generer le prochain access token
+ *
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @returns {Promise<void>}
+ */
+const refreshToken = async(req,res)=>{
+    const isMobile = (req) => req.headers["x-client"] === "mobile"
+    const hash = (t) => crypto.createHash("sha256").update(t).digest("hex")
+    const refreshToken = isMobile(req) ? req.body?.refreshToken : req.signedCookies?.refresh
+
+    if (!refreshToken) return res.status(401).json({ success: false, reconnection: true })
+
+    // Retrouver la session par le hash du refresh
+    const snap = await db.collection("session")
+    .where("refreshHash", "==", hash(refreshToken)).limit(1).get()
+
+    if (snap.empty) {
+        // Refresh inconnu : peut-être un token déjà utilisé et volé -> voir "détection de réutilisation"
+        return res.status(401).json({ success: false, reconnection: true })
+    }
+
+    const doc = snap.docs[0]
+    const s = doc.data()
+    if (new Date(s.expireAt) < new Date()) {
+        await doc.ref.delete()
+        return res.status(401).json({ success: false, reconnection: true })
+    }
+
+    // Rotation : nouveau refresh, l'ancien devient invalide
+    const newRefresh = crypto.randomBytes(48).toString("hex")
+    await doc.ref.update({ refreshHash: hash(newRefresh), expireAt: new Date(Date.now() + 30 * 24 * 3600 * 1000),})
+    const accessToken = createAccessToken(doc.id)
+
+    return envoyerTokens(req, res, { accessToken, refreshToken: newRefresh, user: undefined })
+}
+
 module.exports = {
     register,
     login,
@@ -263,5 +295,6 @@ module.exports = {
     updatePassword,
     forgotPassword,
     forgotPasswordUpdate,
-    canUseIdentifiant
+    canUseIdentifiant,
+    refreshToken,
 };

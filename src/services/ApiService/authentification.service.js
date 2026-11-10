@@ -62,7 +62,9 @@ const register = async (data) => {
         throw new AppError("Rôle utilisateur invalide.");
     }
 
+    
     if(idToken){
+        
         const googledata = await 
         authentificationRepository.verifyGoogleToken(idToken)
 
@@ -76,10 +78,7 @@ const register = async (data) => {
     else{
         const passwordValid = validatorPassword(password)
         if(!passwordValid){
-            throw new AppError(
-                "le mot de passe est invalide",
-                422,
-            )
+            throw new AppError( "le mot de passe est invalide", 422, )
         }
     }
 
@@ -100,6 +99,8 @@ const register = async (data) => {
             email: normalizedEmail,
             telephone: normalizedTelephone,
         });
+    
+    
 
     if (existingUser) {
         throw new AppError("Un compte existe déjà avec cet identifiant.");
@@ -145,15 +146,6 @@ const register = async (data) => {
     );
 
     /*
-     * Création de la session après la création du compte.
-     */
-    const sessionId = await createSession(user.id, role);
-
-    if(!sessionId){
-        throw new AppError("ERROR_CREATED_SESSION",400)
-    }
-
-    /*
      * Si l'email n'est pas encore vérifié,
      * on déclenche l'envoi du code OTP.
      */
@@ -163,10 +155,7 @@ const register = async (data) => {
         });
     }
 
-    return {
-        user,
-        sessionId,
-    };
+    return { user } ;
 };
 
 /**
@@ -201,6 +190,7 @@ const login = async ({ role, identifiant, password }) => {
         telephone: !identifiant.includes("@") ? identifiant : null,
     });
 
+
     if (!user) {
         throw new AppError(
             "Aucun compte trouvé avec ces identifiants.",404
@@ -224,19 +214,10 @@ const login = async ({ role, identifiant, password }) => {
         throw new AppError("Mot de passe invalide.",422);
     }
 
-    const sessionId = await createSession(user.id, role);
-
-    if (!sessionId) {
-        throw new AppError(
-            "Impossible de créer la session.",
-            400
-        );
-    }
-
     return {
         userId: user.id,
+        user,
         role,
-        sessionId
     };
 };
 
@@ -382,6 +363,7 @@ const sendOtp = async ({ identifiant }) => {
      */
     return {
         identifiant: normalizedIdentifier,
+        sended: true
     };
 };
 

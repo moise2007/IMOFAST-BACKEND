@@ -6,6 +6,8 @@ const annonceRepository = require("../../repositories/annonce.repository");
 const { formaterObjet } = require("../../utils/formaterObjet");
 const { createMetaDataAnnonce } = require("../../utils/createMetaDataAnnonce");
 const { Annonce } = require("../../models/annonce");
+const { getBiens } = require("./bien.service");
+const { findByPublicId } = require("../../repositories/bailleur.repository");
 
 /**
  * Crée une nouvelle annonce pour un bailleur.
@@ -24,9 +26,11 @@ const { Annonce } = require("../../models/annonce");
  * @returns {Promise<Object>} L'annonce créée.
  */
 exports.createAnnonce = async ({ data, user, role }) => {
+
   if (role !== "bailleur") {
     throw new AppError("accès refusé", 403);
   }
+  console.log(data)
 
   const bailleurId = user.idPublic;
   const { bienId } = data;
@@ -40,10 +44,7 @@ exports.createAnnonce = async ({ data, user, role }) => {
   );
 
   if (!bien) {
-    throw new AppError(
-      "vous ne pouvez pas créer une annonce pour ce bien",
-      403
-    );
+    throw new AppError( "vous ne pouvez pas créer une annonce pour ce bien", 403);
   }
 
   /**
@@ -68,11 +69,8 @@ exports.createAnnonce = async ({ data, user, role }) => {
 
   const annonce = new Annonce({
     ...donneesNettoyees,
-
     idPublic: createId(),
-
     bailleurId,
-
     verifie: false,
 
     metaData: createMetaDataAnnonce({
@@ -86,41 +84,20 @@ exports.createAnnonce = async ({ data, user, role }) => {
 };
 
 /**
- * Récupère la liste des annonces accessibles à l'utilisateur.
- *
- * La pagination est normalisée sous la forme :
- *
- * {
- *   annonces,
- *   pagination: {
- *     page,
- *     limit,
- *     totalItems,
- *     totalPages,
- *     hasNextPage,
- *     hasPreviousPage
- *   }
- * }
+ * Récupère les annonces accessibles à l'utilisateur
+ * et enrichit chaque annonce avec son bien et son bailleur.
  *
  * @param {Object} params
- * @param {Object} params.filters Filtres et paramètres de pagination.
+ * @param {Object} params.filters Filtres et pagination.
  * @param {Object} params.user Utilisateur authentifié.
  * @param {string} params.role Rôle de l'utilisateur.
- * @returns {Promise<Object>} Liste paginée des annonces.
+ *
+ * @returns {Promise<Object>} Liste paginée des annonces enrichies.
  */
 exports.getAnnonces = async ({ filters, user, role }) => {
   const { page, limit, ...criteres } = filters;
 
-  /**
-   * Construction du périmètre de recherche.
-   *
-   * Un bailleur consulte ses propres annonces.
-   * Un locataire peut consulter les annonces publiées.
-   * Un visiteur peut consulter les annonces publiques.
-   */
-  let criteresFinaux = {
-    ...criteres,
-  };
+  const criteresFinaux = { ...criteres };
 
   if (role === "bailleur") {
     criteresFinaux.bailleurId = user.idPublic;
@@ -129,7 +106,7 @@ exports.getAnnonces = async ({ filters, user, role }) => {
   /**
    * Récupération des annonces et du nombre total en parallèle.
    */
-  const [docs, totalItems] = await Promise.all([
+  const [annonces, totalItems] = await Promise.all([
     annonceRepository.findMany({
       criteres: criteresFinaux,
       page,
@@ -145,10 +122,37 @@ exports.getAnnonces = async ({ filters, user, role }) => {
     }),
   ]);
 
+  /**
+   * Enrichissement des annonces.
+   */
+  const annoncesEnrichies = await Promise.all(
+    annonces.map(async (annonce) => {
+      const [resultatBiens, bailleur] = await Promise.all([
+        getBiens(user, role, {
+          id: annonce.bienId,
+          page: 1,
+          limit: 1,
+        }),
+
+        role == "bailleur" ? user :  findByPublicId(annonce.bailleurId),
+      ]);
+
+      const bien = resultatBiens.biens?.[0] ?? null;
+      return {
+        ...annonce,
+        bien,
+        bailleur: bailleur ?? null,
+      };
+    })
+  );
+
+  /**
+   * Pagination.
+   */
   const totalPages = Math.ceil(totalItems / limit);
 
   return {
-    annonces: docs,
+    annonces: annoncesEnrichies,
 
     pagination: {
       page,

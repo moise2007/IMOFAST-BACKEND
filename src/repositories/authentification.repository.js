@@ -1,4 +1,4 @@
-const{ admin } = require("../config/firebase");
+const { admin } = require("../config/firebase");
 const AppError = require("../errors/AppError");
 const { verifyGoogleTokenAuth } = require("../services/verifyIdGoogle.service");
 
@@ -122,20 +122,19 @@ const findVerifiedUserByIdentifier = async ({
 
     if (email) {
         filters.push(
-            Filter.where(
-                "email",
-                "==",
-                email
+            Filter.and(
+                Filter.where("email", "==", email),
+                Filter.where("verification.emailVerifie", "==", true)
             )
         );
     }
 
+
     if (telephone) {
         filters.push(
-            Filter.where(
-                "telephone",
-                "==",
-                telephone
+            Filter.and(
+                Filter.where("telephone", "==", telephone),
+                Filter.where("verification.telephoneVerifie", "==", true)
             )
         );
     }
@@ -144,24 +143,13 @@ const findVerifiedUserByIdentifier = async ({
         return null;
     }
 
-    const identifierFilter =
-        filters.length === 1
-            ? filters[0]
-            : Filter.or(...filters);
+    const identifierFilter = filters.length === 1 ? filters[0] : Filter.or(...filters);
 
     const snapshot = await collection
-        .where(
-            Filter.and(
-                identifierFilter,
-                Filter.where(
-                    "verification.emailVerifie",
-                    "==",
-                    true
-                )
-            )
-        )
+        .where(identifierFilter)
         .limit(10)
         .get();
+
 
     const document = snapshot.docs.find(
         (doc) => doc.id !== excludeUserId
@@ -259,7 +247,7 @@ const deleteUnverifiedDuplicates = async ({
  */
 const createUser = async (role, data) => {
     const collection = getCollection(role);
-    const userData = {...data};
+    const userData = { ...data };
     const document = collection.doc();
     await document.set(userData);
     const createdDocument = await document.get();
@@ -463,19 +451,19 @@ const verifiedPasswordResetToken = async ({
     const collection = db
         .collection("passwordResetTokens")
 
-    
-    const tokenSnapshot = await collection.where("identifiant","==",identifiant).limit(1).get()
-    if(tokenSnapshot.empty){
+
+    const tokenSnapshot = await collection.where("identifiant", "==", identifiant).limit(1).get()
+    if (tokenSnapshot.empty) {
         return null
     }
 
-    const token ={...tokenSnapshot.docs[0].data()}
+    const token = { ...tokenSnapshot.docs[0].data() }
 
-    if(new Date(token.expiresAt) < new Date() || token.used || token.role != role){
+    if (new Date(token.expiresAt) < new Date() || token.used || token.role != role) {
         return null
     }
     return true
-    
+
 };
 
 /**
@@ -487,8 +475,8 @@ const verifiedPasswordResetToken = async ({
 const verifyGoogleToken = async (idToken) => {
     const decodedToken = await verifyGoogleTokenAuth(idToken)
 
-    if(!decodedToken.success){
-        return ;
+    if (!decodedToken.success) {
+        return;
     }
     return decodedToken.user
 };

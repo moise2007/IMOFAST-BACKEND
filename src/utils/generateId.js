@@ -4,13 +4,20 @@ const PREFIXES = {
     user: "user",
     locataire: "loc",
     bailleur: "bai",
-    session: "ses"
+    session: "ses",
+    logement: "log",
+    media: "med",
+    message: "msg",
+    notification: "not",
+    conversation: "con",
+    contrat: "ctr",
+    paiement: "pay",
 }
 
-export const genenrateId = (type = "user", isAnomyme)=>{
+export const generateId = (type = "user", isAnonymous=false)=>{
 
-    const prefixe = isAnomyme ? "Anm" : PREFIXES[type] ?? "ERR"
-    const radicale = createId()
+    const prefix = isAnonymous ? "Anm" : PREFIXES[type] ?? "ERR"
+    const radical = createId()
     const now = new Date()
-    return prefixe  + radicale + now.getFullYear()
+    return prefix  + radical + now.getFullYear()
 }

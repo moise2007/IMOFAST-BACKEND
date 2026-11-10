@@ -3,6 +3,7 @@ const express = require("express");
 const {
   authAdminLocataire,
   authBailleurLocataireAdmin,
+  authBailleurAdmin,
 } = require("../middlewares/auth");
 
 const annonceController = require("../controllers/annonce.controller");
@@ -25,7 +26,7 @@ const routerAnnonce = express.Router();
  */
 routerAnnonce.post(
   "/",
-  authBailleurLocataireAdmin,
+  authBailleurAdmin,
   validate(createAnnonceSchema),
   annonceController.createAnnonceBailleur
 );

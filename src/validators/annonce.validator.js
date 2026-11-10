@@ -51,20 +51,22 @@ const createAnnonceSchema = z.object({
     .min(1, "identifiant du bien invalide")
     .max(50, "identifiant du bien invalide"),
 
-  loyer: z
-    .array(
+  loyer: z.union([
+    z.array(
       z.object({
-        prix: z.coerce
-          .number({
-            message: "le prix du loyer doit être un nombre",
-          })
-          .int("le prix du loyer doit être un entier")
-          .min(0, "le prix du loyer ne peut pas être négatif"),
-
-        frequence: z.string().trim().optional(),
+        caution: z.number(),
+        duree: z.enum(["annee", "mois", "semaine", "jour"]),
+        fraisVisite: z.number(),
+        min: z.number(),
+        prix: z.number(),
+        valeur: z.literal(1),
       })
-    )
-    .min(1, "le loyer est obligatoire"),
+    ),
+
+    z.object({
+      prix: z.number(),
+    })
+  ]),
 
   devise: z
     .string({
@@ -77,9 +79,7 @@ const createAnnonceSchema = z.object({
   dateExpiration: z
     .preprocess(
       emptyToUndefined,
-      z.coerce.date({
-        message: "la date d'expiration est invalide",
-      })
+      z.coerce.date({ message: "la date d'expiration est invalide" })
     )
     .optional(),
 });
@@ -286,9 +286,11 @@ const updateAnnonceSchema = createAnnonceSchema
  * @returns {Function} Middleware Express.
  */
 const validate = (schema, source = "body") => (req, res, next) => {
+  
   const result = schema.safeParse(req[source]);
 
   if (!result.success) {
+    console.log("la verificattion a echouer")
     return res.status(400).json({
       success: false,
       message: "Données invalides",

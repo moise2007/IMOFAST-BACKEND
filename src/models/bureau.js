@@ -80,12 +80,12 @@ class Bureau {
 
         let motCles = [
             ...prefixes(this.ville),
-            ...prefixes(this.quartier),
-            ...adapte(this.adresse).toLowerCase().split(" "),
+            ...prefixes(this.quartier ?? ""),
+            ...adapte(this.adresse ?? "").toLowerCase().split(" "),
             ...adapte(this.ville).toLowerCase().split(" "),
-            ...adapte(this.quartier).toLowerCase().split(" "),
+            ...adapte(this.quartier ?? "").toLowerCase().split(" "),
             ...adapte(this.pays).toLowerCase().split(" "),
-            ...adapte(this.adresse).normalize("NFD").split(" "),
+            ...adapte(this.adresse ?? "").normalize("NFD").split(" "),
             ...adapte(this.ville).normalize("NFD").split(" "),
             ...adapte(this.quartier).normalize("NFD").split(" "),
             ...adapte(this.pays).normalize("NFD").split(" "),

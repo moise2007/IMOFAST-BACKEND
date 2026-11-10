@@ -12,6 +12,7 @@ const uploadFiles = async (req, res) => {
         req,
     });
 
+
     return res.status(200).json({
         success: true,
         message: "Fichiers uploadés avec succès.",

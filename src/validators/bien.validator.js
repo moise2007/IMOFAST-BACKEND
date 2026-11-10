@@ -138,9 +138,11 @@ const montantSchema = z
   )
   .transform((v) => Number(v));
 
+const montantNullableSchema = montantSchema.nullable();
+
 const compteurSchema = obj({
-  type: choice(['postpayer', 'prepayer', 'fixe']),
-  prix: montantSchema,
+  type: choice(["postpayer", "prepayer", "fixe"]),
+  prix: montantNullableSchema,
 });
 
 const superficieSchema = montantSchema.refine((v) => v > 0, {
@@ -360,6 +362,10 @@ const validateCreateBien = (req, res, next) => {
   const body = req.body ?? {};
   const type = body?.typeBien;
 
+  console.log({
+    body, type
+  })
+
   if (!["logement", "boutique", "bureau", "terrain"].includes(body?.typeBien)) {
     return fail(res, [{ champ: "type", message: "le type de bien est invalide" }]);
   }
@@ -375,6 +381,8 @@ const validateCreateBien = (req, res, next) => {
     }
     return next()
   }
+
+  console.log(result.error)
   console.log("verification echouer")
 
   return res.status(400).json({

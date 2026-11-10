@@ -20,12 +20,12 @@ class Locataire {
     devise = null,
     idConversationAdmin,
   }) {
-    this.nom = nom ?? "";
-    this.prenom = prenom ?? "";
+    this.nom = nom ?? null;
+    this.prenom = prenom ?? null;
     this.devise = devise;
     this.langue = langue;
     this.photoProfil = photoProfil;
-    this.dateNaissance = dateNaissance ?? "";
+    this.dateNaissance = dateNaissance ?? null;
     this.preferences = {
       typeLogement: preferences?.types ?? "all",
       maxBudget: preferences?.maxBudget ?? 150000,
@@ -33,7 +33,7 @@ class Locataire {
     };
     this.email = email ?? "";
     this.password = password
-    this.telephone = telephone ?? "";
+    this.telephone = telephone ?? null;
     this.uidGoogle = uidGoogle ?? null;
     this.emailverifie = emailVerifie;
     this.telephoneVerifie = telephoneVerifie
@@ -43,6 +43,7 @@ class Locataire {
 
   toDataBase() {
     return {
+      role: "locataire",
       nom: this.nom,
       prenom: this.prenom,
       dateNaissance: this.dateNaissance,

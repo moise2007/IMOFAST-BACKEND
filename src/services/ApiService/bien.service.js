@@ -159,15 +159,12 @@ const getBiens = async ({
    * L'admin peut utiliser le bailleurId transmis
    * dans les filtres.
    */
-  if (role !== "admin") {
+  if (role !== "admin" && role !== "locataire") {
     repositoryFilters.bailleurId =
       user.idPublic;
   }
 
-  const result =
-    await bienRepository.list(
-      repositoryFilters
-    );
+  const result = await bienRepository.list( repositoryFilters )
 
   const biens = result.items.map(
     ({ bien }) => bien
@@ -179,8 +176,7 @@ const getBiens = async ({
     total,
   } = result.pagination;
 
-  const totalPages =
-    total === 0
+  const totalPages = total === 0
       ? 0
       : Math.ceil(total / limit);
 

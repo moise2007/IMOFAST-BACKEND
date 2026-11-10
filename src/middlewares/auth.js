@@ -29,7 +29,16 @@ const ROLES_CONNUS = ["bailleurs", "locataires"]
 
 //lecture du token 
 const getToken = (req) => {
-    return req.signedCookies?.token
+  const cookieToken = req.signedCookies?.token
+  if (cookieToken) return cookieToken
+
+  const header = req.headers?.authorization
+  if (typeof header !== "string") return null
+
+  const [scheme, value] = header.split(" ")
+  if (scheme?.toLowerCase() !== "bearer" || !value) return null
+
+  return value.trim()
 }
 
 
@@ -39,13 +48,13 @@ const createAuthMiddleware  = (role=[])=>async(req,res,next)=>{
     return res.status(status).json(body)
   }
   if(role.length == 0){
-    return clearAndRespond(401,{...RESPONSES.tokenManquant, msg: "veuillez founir le role"})
+    return clearAndRespond(429,{...RESPONSES.tokenManquant, msg: "veuillez founir le role"})
   }
   try{
     //recuperation du cookie
     const token = getToken(req)
     if(!token){
-      return clearAndRespond(401,RESPONSES.tokenManquant)
+      return clearAndRespond(429,RESPONSES.tokenManquant)
     }
    
 
@@ -55,24 +64,24 @@ const createAuthMiddleware  = (role=[])=>async(req,res,next)=>{
       decoded = jwt.verify(token, process.env.JWT_SECRET)
     }
     catch{
-      return clearAndRespond(401,RESPONSES.sessionInvalide)
+      return clearAndRespond(429,RESPONSES.sessionInvalide)
     }
     //verification de la presence de l'id de la session dans le cookie
     const sessionId = decoded?.idsession
     if(!sessionId){
-      return clearAndRespond(401,RESPONSES.sessionInvalide)
+      return clearAndRespond(429,RESPONSES.sessionInvalide)
     }
 
     //verification de l'existence de la session
     const sessionDoc = await db.collection("session").doc(sessionId).get()
     if (!sessionDoc.exists) {
-        return clearAndRespond(401, RESPONSES.sessionInvalide)
+        return clearAndRespond(429, RESPONSES.sessionInvalide)
     }
     //verification de expiration
     const {expireAt} = sessionDoc.data()
     if(new Date(expireAt) < new Date()){
       await db.collection('session').doc(sessionId).delete()
-      return clearAndRespond(401,{
+      return clearAndRespond(429,{
         ...RESPONSES.sessionInvalide,
         msg: "la sesison a expiré, veuillez vous reconnecter"
       })
@@ -84,7 +93,7 @@ const createAuthMiddleware  = (role=[])=>async(req,res,next)=>{
     const userId = sessionDoc.data().userId
     const role = sessionDoc.data().role
     if(!userId || !role){
-      return clearAndRespond(401,RESPONSES.sessionInvalide)
+      return clearAndRespond(429,RESPONSES.sessionInvalide)
     }
 
     const userDoc = await db.collection(role).doc(userId).get()
@@ -120,7 +129,7 @@ const createAuthMiddleware  = (role=[])=>async(req,res,next)=>{
 
     
     if(!(userData.verification?.emailVerifie || userData.verification?.telephoneVerifie)){
-      return res.status(403).json({
+      return res.status(429).json({
         success: false,
         fetchApi: true,
         path: '/api/otp/envoieCode/email',

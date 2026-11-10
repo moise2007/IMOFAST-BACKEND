@@ -39,72 +39,79 @@ const findByPublicId = async (idPublic) => {
  * @returns 
  */
 const getStatistiquesByBailleurId = async (bailleurId) => {
-    if (!bailleurId) {
-        throw new AppError("vous n'etes pas autoriser.",403);
+  if (!bailleurId) {
+    throw new AppError("Vous n'êtes pas autorisé.", 403);
+  }
+
+  const snapshot = await db
+    .collection(COLLECTION)
+    .where("bailleurId", "==", bailleurId)
+    .get();
+
+  const statistiques = {
+    total: 0,
+    libre: 0,
+    construction: 0,
+    occuper: 0,
+    parType: {},
+  };
+
+  // Conversion sécurisée en nombre
+  const toNumber = (value) => {
+    if (value === null || value === undefined || value === "") {
+      return 0;
     }
+    const nombre = Number(value);
+    return Number.isFinite(nombre) ? Math.max(0, nombre) : 0;
+  };
 
-    const snapshot = await db
-        .collection(COLLECTION)
-        .where("bailleurId", "==", bailleurId)
-        .get();
+  snapshot.docs.forEach((document) => {
+    const bien = document.data();
+    const type = bien.typeBien;
+    const exemplaire = bien.exemplaire;
 
-    const statistiques = {
+    if (!type) return;
+    // Initialisation des statistiques par catégorie
+    if (!statistiques.parType[type]) {
+      statistiques.parType[type] = {
         total: 0,
         libre: 0,
         construction: 0,
         occuper: 0,
-        parType: {},
+      };
+    }
+
+    const statsType = statistiques.parType[type];
+
+    // Statistiques propres au bien
+    const statsBien = {
+      libre: 0,
+      construction: 0,
+      occuper: 0,
     };
 
-    snapshot.docs.forEach((document) => {
-        const bien = document.data();
+    statsBien.libre = toNumber(exemplaire.libre);
+    statsBien.construction = toNumber(exemplaire.construction);
+    statsBien.occuper = toNumber(exemplaire.occuper);
+    
 
-        const type = bien.typeBien;
-        const exemplaire = bien.exemplaire;
+    // Calcul du total du bien
+    const totalBien = statsBien.libre + statsBien.construction + statsBien.occuper;
 
-        if (!type) return;
+    // Mise à jour des statistiques globales
+    statistiques.total += totalBien;
+    statistiques.libre += statsBien.libre;
+    statistiques.construction += statsBien.construction;
+    statistiques.occuper += statsBien.occuper;
 
-        if (!statistiques.parType[type]) {
-            statistiques.parType[type] = {
-                total: 0,
-                libre: 0,
-                construction: 0,
-                occuper: 0,
-            };
-        }
+    // Mise à jour des statistiques par type
+    statsType.total += totalBien;
+    statsType.libre += statsBien.libre;
+    statsType.construction += statsBien.construction;
+    statsType.occuper += statsBien.occuper;
+  });
 
-        const statsType = statistiques.parType[type];
-        let total = 0
-        if(typeof exemplaire == "string" || typeof exemplaire == "number"){
-
-          const nombre = typeof exemplaire == "string" 
-          ?  Number.isNaN(exemplaire) ? 0 : Number(nombre)
-          : exemplaire 
-           
-          statistiques["libre"] += nombre;
-          total += nombre
-          statsType["libre"] += nombre;
-        }
-        if ( exemplaire && typeof exemplaire === "object" && !Array.isArray(exemplaire) ) {
-            ["libre", "construction", "occuper"].forEach((etat) => {
-                const valeur = exemplaire[etat];
-
-                const nombre = typeof valeur === "number"
-                        ? Math.max(0, valeur)
-                        : Number.isNaN(valeur)
-                        ? 0
-                        : parseInt(valeur)
-                total += nombre
-                statistiques[etat] += nombre;
-                statsType[etat] += nombre;
-            });
-        }
-
-        statistiques.total += total;
-        statsType.total +=total;
-    });
-
-    return statistiques;
+  return statistiques;
 };
 
 
@@ -199,8 +206,8 @@ const updateByPublicId = async ({
 }) => {
   let ref = documentId
     ? db
-        .collection(COLLECTION)
-        .doc(documentId)
+      .collection(COLLECTION)
+      .doc(documentId)
     : null;
 
   let latestBien = currentBien;

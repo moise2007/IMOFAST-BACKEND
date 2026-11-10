@@ -24,7 +24,7 @@ class OTPService {
         OTPService.optCode[identifiant] = {
             code,
             tentative: 0,
-            nextAllowedTime: new Date(Date.now() + 10 * 60 * 1000)
+            nextAllowedTime: new Date(Date.now() + 2 * 60 * 1000)
         };
         console.log(OTPService.optCode)
         return {

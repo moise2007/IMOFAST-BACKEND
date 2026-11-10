@@ -150,7 +150,7 @@ class Bien {
             superficie:this.superficie ?? 10, // m²
 
             niveauFinition: this?.niveauFinition ?? "standard",
-            etage: his.etage ?? {min: 0 , max:null},
+            etage: this.etage ?? {min: 0 , max:null},
             // pour duplex/villa : nombre total d'étages du bien
             equipements: {
                 lit: this.equipements?.lit ?? null,

@@ -19,7 +19,8 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS ?? "")
   .map((s) => s.trim())
   .filter(Boolean);
 const localPatterns = [/^http:\/\/localhost(:\d+)?$/];
-
+const localOriginPattern =
+  /^http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3})(:\d+)?$/;
 const app = express();
 app.set("trust proxy", 1);
 
@@ -50,13 +51,14 @@ app.use(
       const ok =
         !origin ||
         allowedOrigins.includes(origin) ||
+        localOriginPattern.test(origin) ||
         localPatterns.some((p) => p.test(origin));
 
       if (ok) return callback(null, true);
       callback(new AppError(`Origine non autorisée : ${origin}`, 403));
     },
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-    allowedHeaders: ["Content-Type", "Authorization" /*, "X-CSRF-Token" */],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Client" ],
     credentials: true,
   })
 );

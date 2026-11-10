@@ -27,12 +27,12 @@ class Bailleur{
         this.nom = nom 
         this.nomAgence = nomAgence ?? null
         this.typeProfil = typeProfil ?? "bailleur"
-        this.prenom = prenom ?? ""
-        this.email = email ?? ""
+        this.prenom = prenom ?? null
+        this.email = email ?? null
         this.autreNumero = autreNumero ?? null
-        this.langue = langue ?? ""
-        this.devise = devise ?? ''
-        this.sexe = sexe ?? ""
+        this.langue = langue ?? null
+        this.devise = devise ?? null
+        this.sexe = sexe ?? null
         this.telephone = telephone ?? ""
         this.password = password ?? null
         this.photoProfil = photoProfil ?? null
@@ -48,16 +48,17 @@ class Bailleur{
 
     toDataBase(){
         return{
+            role: "bailleur",
             nom: this.nom,
             prenom: this.prenom,
             nomAgence: this.nomAgence,
-            telephone : this.telephone ??"",
+            telephone : this.telephone ??null,
             autreNumero: this.autreNumero,
-            email : this.email ?? "",
+            email : this.email ?? null,
             typeProfil: this.typeProfil,
             password :  this.password,
-            photoProfil : this.photoProfil ?? "",
-            dateNaissance: this.dateNaissance ?? "",
+            photoProfil : this.photoProfil ?? null,
+            dateNaissance: this.dateNaissance ?? null,
             localisation:this.localisation ??null,
             uidGoogle: this.uidGoogle ?? null,
             idPublic: createId(),

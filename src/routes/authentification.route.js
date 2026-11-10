@@ -9,6 +9,7 @@ const {
     verifyOtp,
     verifyEmail,
     verifyTelephone,
+    refreshToken,
     updateIdentifier,
     updatePassword,
     canUseIdentifiant,
@@ -90,6 +91,7 @@ routerAuthentification.post( "/email/verify", validate(verifyEmailSchema), verif
  */
 routerAuthentification.post( "/telephone/verify", validate(verifyTelephoneSchema), verifyTelephone);
 
+
 /**
  * @route PATCH /auth/identifier
  * @description Modifie l'adresse email ou le numéro de téléphone de l'utilisateur.
@@ -130,6 +132,8 @@ routerAuthentification.patch(
     validate(forgotPasswordSchema),
     forgotPasswordUpdate
 );
+
+routerAuthentification.post("/refresh", refreshToken)
 
 module.exports = {
     routerAuthentification,

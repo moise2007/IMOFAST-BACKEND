@@ -4,10 +4,11 @@ const { asyncHandler } = require("../utils/asyncHandler");
 const annonceService = require("../services/ApiService/annonce.service");
 
 const createAnnonceBailleur = asyncHandler(async (req, res) => {
+    console.log("la procedure de creation d'annonce a commencer")
     const annonce = await annonceService.createAnnonce({
         data: req.body,
         user: req.user,
-        role: req.role,
+        role: req.role ?? req.user.role,
     });
 
     return res.status(201).json({
