@@ -125,8 +125,7 @@ const createBien = async ({
 const getBien = async ({
   id,
 }) => {
-  const result =
-    await bienRepository.findByPublicId(id);
+  const result = await bienRepository.findByPublicId(id);
 
   if (!result) {
     createBusinessError( "Le bien n'existe pas",404);
@@ -160,8 +159,7 @@ const getBiens = async ({
    * dans les filtres.
    */
   if (role !== "admin" && role !== "locataire") {
-    repositoryFilters.bailleurId =
-      user.idPublic;
+    repositoryFilters.bailleurId = user.idPublic;
   }
 
   const result = await bienRepository.list( repositoryFilters )

@@ -57,9 +57,9 @@ const createAnnonceSchema = z.object({
         caution: z.number(),
         duree: z.enum(["annee", "mois", "semaine", "jour"]),
         fraisVisite: z.number(),
-        min: z.number(),
+        min: z.number().optional(),
         prix: z.number(),
-        valeur: z.literal(1),
+        valeur: z.literal(1).optional(),
       })
     ),
 
@@ -286,8 +286,10 @@ const updateAnnonceSchema = createAnnonceSchema
  * @returns {Function} Middleware Express.
  */
 const validate = (schema, source = "body") => (req, res, next) => {
+
   
   const result = schema.safeParse(req[source]);
+  console.log(result.error)
 
   if (!result.success) {
     console.log("la verificattion a echouer")

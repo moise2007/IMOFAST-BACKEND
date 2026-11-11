@@ -3,17 +3,17 @@ const { db, admin } = require("../config/firebase");
 /**
  * Collection principale des annonces.
  */
-const annonceCollection = db.collection("annonces");
+const annonceCollection = db.collection("annonce");
 
 /**
  * Collection des biens.
  */
-const bienCollection = db.collection("biens");
+const bienCollection = db.collection("bien");
 
 /**
  * Collection des bailleurs.
  */
-const bailleurCollection = db.collection("bailleurs");
+const bailleurCollection = db.collection("bailleur");
 
 /**
  * Collection des favoris.
@@ -23,7 +23,7 @@ const favorisCollection = db.collection("favoris");
 /**
  * Collection des candidatures.
  */
-const candidatureCollection = db.collection("candidatures");
+const candidatureCollection = db.collection("candidature");
 
 /**
  * Récupère un bien appartenant à un bailleur.
@@ -73,7 +73,7 @@ exports.countByBienAndBailleur = async (bienId, bailleurId) => {
  * @returns {Promise<Object>} Annonce créée.
  */
 exports.create = async (annonce) => {
-  await annonceCollection.doc(annonce.idPublic).set({
+  await annonceCollection.add({
     ...annonce,
   });
 
@@ -200,9 +200,7 @@ exports.findMany = async ({ criteres = {}, page, limit }) => {
     const previousSnapshot = await query.limit(offset).get();
 
     if (!previousSnapshot.empty) {
-      const lastDocument =
-        previousSnapshot.docs[previousSnapshot.docs.length - 1];
-
+      const lastDocument = previousSnapshot.docs[previousSnapshot.docs.length - 1];
       query = query.startAfter(lastDocument);
     }
   }

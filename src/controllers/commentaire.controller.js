@@ -30,7 +30,10 @@ const getCommentaires = asyncHandler(async (req, res) => {
     await commentaireService.getCommentaires({
       ...req.validatedParams,
       ...req.validatedQuery,
+      typeCible: req.validatedParams?.col ?? null,
+      cibleId: req.validatedParams?.id ?? null
     });
+
 
   return res.status(200).json({
     success: true,

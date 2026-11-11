@@ -440,9 +440,7 @@ async function getCandidature({
     });
 
   if (!candidature) {
-    const error = new Error(
-      "Candidature introuvable."
-    );
+    const error = new Error( "Candidature introuvable." );
 
     error.statusCode = 404;
     throw error;

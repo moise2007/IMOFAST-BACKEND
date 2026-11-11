@@ -11,6 +11,8 @@ const createAnnonceBailleur = asyncHandler(async (req, res) => {
         role: req.role ?? req.user.role,
     });
 
+    console.log("annonce creer avec success")
+
     return res.status(201).json({
         success: true,
         annonce,

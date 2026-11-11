@@ -22,6 +22,7 @@ const uploadMedia = multer({
     storage: multer.memoryStorage(),
     limits: {fileSize: 512*1024*1024},
     fileFilter: (req,file,cb)=>{
+
         const tous = [...TYPES_AUTORISES.images,...TYPES_AUTORISES.videos,...TYPES_AUTORISES.audio]
         if(tous.includes(file.mimetype)){
             cb(null,true)

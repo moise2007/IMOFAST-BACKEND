@@ -6,7 +6,7 @@ const annonceRepository = require("../../repositories/annonce.repository");
 const { formaterObjet } = require("../../utils/formaterObjet");
 const { createMetaDataAnnonce } = require("../../utils/createMetaDataAnnonce");
 const { Annonce } = require("../../models/annonce");
-const { getBiens } = require("./bien.service");
+const { getBiens, getBien } = require("./bien.service");
 const { findByPublicId } = require("../../repositories/bailleur.repository");
 
 /**
@@ -78,7 +78,7 @@ exports.createAnnonce = async ({ data, user, role }) => {
       bien,
       bailleurId,
     }),
-  });
+  }).toFirebase();
 
   return annonceRepository.create(annonce);
 };
@@ -125,19 +125,15 @@ exports.getAnnonces = async ({ filters, user, role }) => {
   /**
    * Enrichissement des annonces.
    */
-  const annoncesEnrichies = await Promise.all(
-    annonces.map(async (annonce) => {
-      const [resultatBiens, bailleur] = await Promise.all([
-        getBiens(user, role, {
-          id: annonce.bienId,
-          page: 1,
-          limit: 1,
-        }),
 
+  let annoncesEnrichies = [...(annonces ?? [])]
+  annoncesEnrichies = await Promise.all(
+    annonces.map(async (annonce) => {
+      const [bien, bailleur] = await Promise.all([
+        getBien({id: annonce.bienId}),
         role == "bailleur" ? user :  findByPublicId(annonce.bailleurId),
       ]);
 
-      const bien = resultatBiens.biens?.[0] ?? null;
       return {
         ...annonce,
         bien,
@@ -145,11 +141,15 @@ exports.getAnnonces = async ({ filters, user, role }) => {
       };
     })
   );
+  
+   
 
   /**
    * Pagination.
    */
   const totalPages = Math.ceil(totalItems / limit);
+
+  console.log(annoncesEnrichies)
 
   return {
     annonces: annoncesEnrichies,

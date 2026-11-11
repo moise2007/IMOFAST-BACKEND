@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken")
 const { db } = require("../config/firebase")
+const { getToken } = require("../utils/session")
 
 
 
@@ -27,19 +28,6 @@ const ROLES_CONNUS = ["bailleurs", "locataires"]
 
 
 
-//lecture du token 
-const getToken = (req) => {
-  const cookieToken = req.signedCookies?.token
-  if (cookieToken) return cookieToken
-
-  const header = req.headers?.authorization
-  if (typeof header !== "string") return null
-
-  const [scheme, value] = header.split(" ")
-  if (scheme?.toLowerCase() !== "bearer" || !value) return null
-
-  return value.trim()
-}
 
 
 const createAuthMiddleware  = (role=[])=>async(req,res,next)=>{
@@ -92,6 +80,7 @@ const createAuthMiddleware  = (role=[])=>async(req,res,next)=>{
     //recuperation de utilisateur
     const userId = sessionDoc.data().userId
     const role = sessionDoc.data().role
+    req.role = role
     if(!userId || !role){
       return clearAndRespond(429,RESPONSES.sessionInvalide)
     }

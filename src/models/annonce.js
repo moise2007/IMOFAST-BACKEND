@@ -77,7 +77,7 @@ class Annonce {
             },
             verifie: this.verifie,
             createdAt: timestamp.now(),
-            updateAt: timestamp.now(),
+            updatedAt: timestamp.now(),
             nature: this.nature ?? "location",
             recherche: {
                 motCles: motCles,

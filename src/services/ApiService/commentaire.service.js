@@ -88,9 +88,7 @@ const createCommentaire = async ({
   );
 
   if (typeCible === "annonce") {
-    await commentaireRepository.incrementAnnonceCommentaires(
-      cibleId
-    );
+    await commentaireRepository.incrementAnnonceCommentaires( cibleId );
   }
 
   return commentaireSnapshot.data();

@@ -66,9 +66,9 @@ const commentaireIdSchema = z.object({
  * GET /commentaires/annonce/annonce_123
  */
 const getCommentairesParamsSchema = z.object({
-  typeCible: z.enum(TYPES_CIBLE),
+  col: z.enum(TYPES_CIBLE),
 
-  cibleId: z
+  id: z
     .string()
     .trim()
     .min(1, "L'identifiant de la cible est requis"),
@@ -123,6 +123,7 @@ const validate = (schema, source = "body") => {
     const result = schema.safeParse(req[source]);
 
     if (!result.success) {
+      console.log(result.error)
       return res.status(400).json({
         success: false,
         errors: result.error.flatten(),
