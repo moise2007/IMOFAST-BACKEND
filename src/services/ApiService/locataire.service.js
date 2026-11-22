@@ -14,14 +14,14 @@ const getDataLocataire = async (user) => {
     const locataireId = user.id ;
 
     if (!locataireId) {
-        throw new AppError( "Impossible d'identifier le locataire.",404);
+        throw new AppError( "errors:backend.notFound",404);
     }
 
     const locataire = await locataireRepository.findById( locataireId );
 
     if (!locataire) {
         throw new AppError(
-            "Locataire introuvable."
+            "errors:backend.notFound"
         );
     }
 
@@ -43,7 +43,7 @@ const getProfilLocataire = async (idPublic) => {
 
     if (!locataire) {
         throw new Error(
-            "Locataire introuvable."
+            "errors:backend.notFound"
         );
     }
 
@@ -71,7 +71,7 @@ const updateLocataire = async (user, data) => {
 
     if (!locataire) {
         throw new Error(
-            "Locataire introuvable."
+            "errors:backend.notFound"
         );
     }
 
@@ -163,7 +163,7 @@ const deleteLocataire = async (
 
     if (!locataire) {
         throw new Error(
-            "Locataire introuvable."
+            "errors:backend.notFound"
         );
     }
 

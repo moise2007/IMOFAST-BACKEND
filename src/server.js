@@ -11,7 +11,6 @@ const { initCache, autoSaveCache } = require("./cache/cache.index")
 
 const {db} = require("./config/firebase")
 const { calculerCompletudeProfil } = require("./utils/completudeProfil/completudeProfil.locataire.utils")
-const { locataireComplet, locataireTest } = require("./__mock__/locataireTest")
 // chargement de firebase
 require("./config/firebase")
 
