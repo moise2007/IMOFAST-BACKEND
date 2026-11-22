@@ -23,6 +23,7 @@ const localOriginPattern =
   /^http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3})(:\d+)?$/;
 const app = express();
 app.set("trust proxy", 1);
+app.set('json replacer', require('./utils/privateFields').publicJsonReplacer);
 
 /* SÉCURITÉ DES EN-TÊTES */
 app.use(

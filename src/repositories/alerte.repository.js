@@ -1,20 +1,12 @@
 const { admin, db } = require("../config/firebase");
-const { Timestamp, FieldValue } = admin.firestore;
+const { Timestamp } = admin.firestore;
 
-exports.create = async (alerte, { decrementQuotaOf } = {}) => {
+
+
+exports.create = async (alerte) => {
   const now = Timestamp.now();
   const data = { ...alerte, createdAt: now, updatedAt: now };
-
-  const batch = db.batch();
-  batch.set(db.collection("alerte").doc(data.idPublic), data);
-
-  if (decrementQuotaOf) {
-    batch.update(db.collection("locataire").doc(decrementQuotaOf), {
-      nombreAlertesRestants: FieldValue.increment(-1),
-    });
-  }
-
-  await batch.commit(); // tout ou rien
+  await db.collection("alerte").doc(data.idPublic).set(data);
   return data;
 };
 
@@ -71,12 +63,6 @@ exports.findMany = async ({ criteres, page, limit }) => {
 exports.countMany = async (criteres) => {
   const snap = await buildFilteredQuery(criteres).count().get();
   return snap.data().count;
-};
-
-exports.update = async (idPublic, changes) => {
-  const ref = db.collection("alerte").doc(idPublic);
-  await ref.update({ ...changes, updatedAt: Timestamp.now() });
-  return (await ref.get()).data();
 };
 
 exports.remove = (idPublic) => db.collection("alerte").doc(idPublic).delete();

@@ -15,6 +15,16 @@ const {
 } = require("../middlewares/auth");
 
 const routerBailleur = express.Router();
+const { z } = require('zod');
+const { validate } = require('../validators/notification.validator');
+const onboarding = require('../controllers/onboarding.controller');
+routerBailleur.get('/onboarding', authBailleur, onboarding.get);
+routerBailleur.post('/onboarding/advance', authBailleur,
+  validate(z.object({ etape: z.enum(['bien', 'annonce', 'notifications', 'alertes']) }).strict()), onboarding.advance);
+routerBailleur.get('/dashboard', authBailleur,
+  validate(z.object({ days: z.coerce.number().int().min(7).max(90).default(7) }), 'query'),
+  require('../controllers/dashboard.controller').getDashboard);
+
 
 /**
  * Récupère les données du bailleur connecté.

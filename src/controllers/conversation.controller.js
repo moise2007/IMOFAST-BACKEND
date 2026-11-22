@@ -1,5 +1,6 @@
 const { asyncHandler } = require("../utils/asyncHandler");
 const conversationService = require("../services/ApiService/conversation.service");
+const { Users } = require("../services/auto/usersGetting");
 
 /**
  * Crée ou réactive une conversation entre l'utilisateur connecté
@@ -115,6 +116,7 @@ const getContacts = asyncHandler(async (req, res) => {
     role: req.role,
     texte,
     page,
+    usersCache: await Users.getCacheContact(),
   });
 
   return res.status(200).json({

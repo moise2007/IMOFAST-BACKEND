@@ -19,6 +19,13 @@ const {
 } = require("../validators/candidature.validator");
 
 const routerCandidature = express.Router();
+const { authBailleur, authBailleurLocataire } = require('../middlewares/auth');
+const { z } = require('zod');
+routerCandidature.patch('/:id/read', authBailleur, validate(candidatureActionSchema, 'params'), candidatureController.markRead);
+routerCandidature.get('/:id/profil-locataire', authBailleur, validate(candidatureActionSchema, 'params'), candidatureController.getCandidateProfile);
+routerCandidature.patch('/:id/honoree', authBailleurLocataire, validate(candidatureActionSchema, 'params'),
+  validate(z.object({ honore: z.boolean(), message: z.string().trim().max(2000).optional() }).strict()), candidatureController.setAttendance);
+
 
 /**
  * Crée une nouvelle candidature.

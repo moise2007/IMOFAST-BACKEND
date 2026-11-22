@@ -1,0 +1,14 @@
+{
+  "report": {
+    "subject": "Signalement d’une annonce Imofast",
+    "body": "Signalement : {{id}}\nAnnonce : {{cible}}\nMotif : {{raison}}\nDescription : {{description}}",
+    "reasons": {
+      "contenu_inapproprie": "Contenu inapproprié",
+      "arnaque": "Arnaque",
+      "fausses_informations": "Fausses informations",
+      "harcelement": "Harcèlement",
+      "doublon": "Doublon",
+      "autre": "Autre"
+    }
+  }
+}

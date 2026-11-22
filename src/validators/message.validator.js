@@ -7,6 +7,7 @@ const MESSAGE_TYPES = [
   "texte",
   "image",
   "video",
+  "galerie",
   "audio",
   "lien_annonce",
   "lien_profil",
@@ -48,14 +49,20 @@ const createMessageSchema = z.object({
     .trim()
     .optional(),
 
-  medias: z
-    .object({
+  medias: z.union([
+    z.object({
       url: z.string().url().optional(),
       miniature: z.string().url().optional(),
       taille: z.number().nonnegative().optional(),
       duree: z.number().nonnegative().optional(),
-    })
-    .optional(),
+    }),
+    z.array(z.object({
+      type: z.enum(["image", "video"]),
+      url: z.url(),
+      miniature: z.url().nullish(),
+      taille: z.number().nonnegative().nullish(),
+    })).min(2).max(10),
+  ]).optional(),
 
   lien: z
     .object({
@@ -72,6 +79,13 @@ const createMessageSchema = z.object({
     .string()
     .trim()
     .optional(),
+}).superRefine((message, context) => {
+  if (message.type === "galerie" && !Array.isArray(message.medias)) {
+    context.addIssue({code: "custom", path: ["medias"], message: "Une galerie doit contenir entre 2 et 10 médias."});
+  }
+  if (message.type !== "galerie" && Array.isArray(message.medias)) {
+    context.addIssue({code: "custom", path: ["medias"], message: "Ce type de message ne prend pas en charge une galerie."});
+  }
 });
 
 /**

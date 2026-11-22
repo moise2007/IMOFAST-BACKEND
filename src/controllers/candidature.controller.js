@@ -69,6 +69,8 @@ const acceptCandidature = asyncHandler(async (req, res) => {
   const candidature = await candidatureService.acceptCandidature({
     idPublic: req.validatedParams.id,
     bailleurId: req.user.idPublic,
+    user: req.user,
+    t: req.t,
   });
 
   return res.status(200).json({
@@ -87,6 +89,8 @@ const refuseCandidature = asyncHandler(async (req, res) => {
   const candidature = await candidatureService.refuseCandidature({
     idPublic: req.validatedParams.id,
     bailleurId: req.user.idPublic,
+    user: req.user,
+    t: req.t,
   });
 
   return res.status(200).json({
@@ -105,6 +109,8 @@ const cancelCandidature = asyncHandler(async (req, res) => {
   const candidature = await candidatureService.cancelCandidature({
     idPublic: req.validatedParams.id,
     userId: req.user.idPublic,
+    user: req.user,
+    t: req.t,
   });
 
   return res.status(200).json({
@@ -126,6 +132,7 @@ const programmerCandidature = asyncHandler(async (req, res) => {
       bailleurId: req.user.idPublic,
       date: req.validatedBody.date,
       time: req.validatedBody.time,
+      t: req.t,
     });
 
   return res.status(200).json({
@@ -178,6 +185,12 @@ const deleteCandidature = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
+  markRead: asyncHandler(async (req, res) => res.json({ success: true,
+    candidature: await candidatureService.markRead({ idPublic: req.validatedParams.id, user: req.user }) })),
+  setAttendance: asyncHandler(async (req, res) => res.json({ success: true,
+    candidature: await candidatureService.setAttendance({ idPublic: req.validatedParams.id, user: req.user, role: req.role, data: req.validatedBody }) })),
+  getCandidateProfile: asyncHandler(async (req, res) => res.json({ success: true,
+    profil: await candidatureService.getCandidateProfile({ idPublic: req.validatedParams.id, user: req.user }) })),
   createCandidature,
   getCandidatures,
   getCandidature,

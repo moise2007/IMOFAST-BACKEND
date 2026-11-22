@@ -35,6 +35,7 @@ const {
 } = require("../validators/authentification.validator");
 
 const routerAuthentification = express.Router();
+routerAuthentification.get("/me", require("../controllers/authentification.controller").me);
 
 /**
  * @route POST /auth/register
@@ -96,7 +97,7 @@ routerAuthentification.post( "/telephone/verify", validate(verifyTelephoneSchema
  * @route PATCH /auth/identifier
  * @description Modifie l'adresse email ou le numéro de téléphone de l'utilisateur.
  */
-routerAuthentification.patch( 
+routerAuthentification.patch(
     "/identifier",authBailleurLocataireAdmin,
     validate(updateIdentifierSchema),
     updateIdentifier

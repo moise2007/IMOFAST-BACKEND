@@ -95,6 +95,7 @@ const updateLocataire = async (user, data) => {
         "dateNaissance",
         "localisation",
         "photoProfil",
+        "notificationsActivees",
     ];
 
     allowedFields.forEach((field) => {
@@ -102,6 +103,10 @@ const updateLocataire = async (user, data) => {
             updateData[field] = data[field];
         }
     });
+
+    if (data.notificationsActivees === true) {
+        updateData.notificationPreferences = { ...require("../../utils/notificationPreferences").DEFAULT_NOTIFICATION_PREFERENCES };
+    }
 
     if (data.telephone !== undefined) {
         updateData.telephone =
@@ -218,7 +223,7 @@ const sanitizeLocataire = (locataire) => {
         ...publicLocataire
     } = locataire;
 
-    return publicLocataire;
+    return { ...publicLocataire, hasPassword: Boolean(password) };
 };
 
 /**

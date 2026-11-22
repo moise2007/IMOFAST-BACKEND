@@ -1,7 +1,6 @@
 const express = require("express");
 
 const {
-  authAdminLocataire,
   authBailleurLocataireAdmin,
   authBailleurAdmin,
 } = require("../middlewares/auth");
@@ -24,7 +23,7 @@ const routerBien = express.Router();
  */
 routerBien.post(
   "/",
-  authAdminLocataire,
+  authBailleurAdmin,
   validateCreateBien,
   bienController.createBienBailleur
 );

@@ -10,7 +10,9 @@ const { bienListeCache } = require("./bien-liste.cache");
 const { bailleurDataCache } = require("./bailleur-data.cache");
 const { bailleurHomeCache } = require("./bailleur-home.cache");
 
+const { selectionAnnonceCache } = require("./selection-annonce.cache");
 async function initCache(){
+    await selectionAnnonceCache.init()
     await annonceCache.init()
     await messageCache.init()
     await conversationCache.init()

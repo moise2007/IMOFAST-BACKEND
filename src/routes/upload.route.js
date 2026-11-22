@@ -14,7 +14,7 @@ const middlewareUploads = uploadMedia.fields([
     {name: "imageAnnonce",maxCount: 18},
     {name: "videoAnnonce",maxCount: 6},
     {name: "audioMessage",maxCount: 5},
-    {name: "videoMessage",maxCount: 5},
+    {name: "videoMessage",maxCount: 10},
     {name: "imageMessage",maxCount: 18}
 
 ])

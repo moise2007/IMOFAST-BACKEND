@@ -1,4 +1,4 @@
-import { createId } from "@paralleldrive/cuid2"
+const { createId } = require("@paralleldrive/cuid2")
 
 const PREFIXES = { 
     user: "user",
@@ -6,18 +6,22 @@ const PREFIXES = {
     bailleur: "bai",
     session: "ses",
     logement: "log",
+    annonce: "ann",
     media: "med",
     message: "msg",
     notification: "not",
     conversation: "con",
     contrat: "ctr",
+    note: "note",
     paiement: "pay",
 }
 
-export const generateId = (type = "user", isAnonymous=false)=>{
+const generateId = (type = "user", isAnonymous=false)=>{
 
     const prefix = isAnonymous ? "Anm" : PREFIXES[type] ?? "ERR"
     const radical = createId()
     const now = new Date()
-    return prefix  + radical + now.getFullYear()
+    return prefix  + "_" + radical +  "_" + now.getFullYear()
 }
+
+module.exports = {generateId}

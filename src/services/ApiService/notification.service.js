@@ -50,12 +50,9 @@ const createNotification = async ({ data }) => {
  */
 const getNotifications = async ({
   destinataireId,
-  filters = {},
 }) => {
-  return notificationRepository.findAllByDestinataire({
-    destinataireId,
-    ...filters,
-  });
+  const notifications = await notificationRepository.findLatestByDestinataire(destinataireId);
+  return { notifications };
 };
 
 /**
@@ -78,7 +75,7 @@ const deleteNotification = async ({
 
   if (!result) {
     createBusinessError(
-      "La notification n'existe pas.",
+      "errors:backend.notFound",
       404
     );
   }
@@ -108,7 +105,7 @@ const markAsRead = async ({
 
   if (!result) {
     createBusinessError(
-      "La notification n'existe pas.",
+      "errors:backend.notFound",
       404
     );
   }
@@ -148,8 +145,21 @@ const markAllAsRead = async ({
   return updatedCount;
 };
 
+const subscriptionRepository = require('../../repositories/subscription.repository');
+const AppError = require('../../errors/AppError');
+const { DEFAULT_NOTIFICATION_PREFERENCES } = require('../../utils/notificationPreferences');
+async function subscribe({ account, web, user, role }) {
+  if (account !== `${role}:${user.idPublic}`) throw new AppError('errors:backend.accountMismatch', 409);
+  return subscriptionRepository.updateSubscriptions({ role, userId: user.id, subscription: web });
+}
 module.exports = {
+  subscribe,
+  unsubscribe: ({ user, role, endpoint }) => subscriptionRepository.updateSubscriptions({ role, userId: user.id, endpoint }),
+  getPreferences: user => ({ ...DEFAULT_NOTIFICATION_PREFERENCES, ...user.notificationPreferences }),
+  setPreferences: ({ user, role, preferences }) => subscriptionRepository.setPreferences({ role, userId: user.id, preferences }),
   createNotification,
+  createNotificationOnce: ({ data, eventKey }) => notificationRepository.createOnce(
+    new Notification({ ...data, idPublic: createId() }).toFirebase(), eventKey),
   getNotifications,
   deleteNotification,
   markAsRead,

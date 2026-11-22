@@ -11,7 +11,7 @@ const conversationRepository = require("../../repositories/conversation.reposito
  */
 const ensureConversationRole = (role) => {
   if (role !== "bailleur" && role !== "locataire") {
-    const error = new Error("Role non autorisé");
+    const error = new Error("errors:backend.forbidden");
     error.statusCode = 403;
     error.code = "forbidden";
     throw error;
@@ -69,7 +69,7 @@ const createConversation = async ({
 
   if (userId === otherUserId) {
     const error = new Error(
-      "Un utilisateur ne peut pas créer une conversation avec lui-même"
+      "errors:backend.selfConversation"
     );
 
     error.statusCode = 400;
@@ -122,7 +122,7 @@ const createConversation = async ({
     });
 
   if (!otherUser) {
-    const error = new Error("Utilisateur introuvable");
+    const error = new Error("errors:backend.notFound");
 
     error.statusCode = 404;
     error.code = "user_not_found";
@@ -138,9 +138,9 @@ const createConversation = async ({
 
   const data = conversation.toFirebase();
 
-  await conversationRepository.create(data);
+  const created = await conversationRepository.create(data, { role, userId });
 
-  return data;
+  return created.data;
 };
 
 /**
@@ -236,7 +236,7 @@ const getConversation = async ({
     });
 
   if (!conversation) {
-    const error = new Error("Conversation introuvable");
+    const error = new Error("errors:backend.notFound");
 
     error.statusCode = 404;
     error.code = "not_found";
@@ -261,7 +261,7 @@ const getConversation = async ({
     });
 
   if (!otherUser) {
-    const error = new Error("Participant introuvable");
+    const error = new Error("errors:backend.notFound");
 
     error.statusCode = 404;
     error.code = "user_not_found";
@@ -320,7 +320,7 @@ const deleteConversation = async ({
     });
 
   if (!conversation) {
-    const error = new Error("Conversation introuvable");
+    const error = new Error("errors:backend.notFound");
 
     error.statusCode = 404;
     error.code = "not_found";
@@ -361,7 +361,7 @@ const markConversationAsRead = async ({
     });
 
   if (!conversation) {
-    const error = new Error("Conversation introuvable");
+    const error = new Error("errors:backend.notFound");
 
     error.statusCode = 404;
     error.code = "not_found";
@@ -422,7 +422,7 @@ const getContacts = ({
     );
   });
 
-  const pageSize = 150;
+  const pageSize = 30;
   const start = pageSize * (page - 1);
   const end = start + pageSize;
 

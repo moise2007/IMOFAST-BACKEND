@@ -5,7 +5,7 @@ const Timestamp = admin.firestore.Timestamp;
 /**
  * Types de messages supportés par la messagerie.
  *
- * @typedef {"texte"|"image"|"video"|"audio"|"lien_annonce"|"lien_profil"} MessageType
+ * @typedef {"texte"|"image"|"video"|"galerie"|"audio"|"lien_annonce"|"lien_profil"} MessageType
  */
 
 /**
@@ -85,6 +85,15 @@ class Message {
         taille: this.medias?.taille ?? null,
         duree: this.medias?.duree ?? null,
       };
+    }
+
+    if (this.type === "galerie") {
+      data.medias = this.medias.map(({type, url, miniature, taille}) => ({
+        type,
+        url,
+        miniature: miniature ?? null,
+        taille: taille ?? null,
+      }));
     }
 
     if (

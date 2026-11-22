@@ -1,6 +1,6 @@
 const { z } = require("zod");
 
-const TYPES_CIBLE = ["bien", "profil"];
+const TYPES_CIBLE = ["bien", "profil", "annonce", "commentaire"];
 
 const RAISONS = [
   "contenu_inapproprie",
@@ -24,24 +24,24 @@ const createSignalementSchema = z.object({
   idCible: z
     .string()
     .trim()
-    .min(1, "La cible du signalement est requise"),
+    .min(1, "errors:backend.invalidInput"),
 
   typeCible: z.enum(TYPES_CIBLE, {
     errorMap: () => ({
-      message: "Le type de cible est invalide",
+      message: "errors:backend.invalidInput",
     }),
   }),
 
   raison: z.enum(RAISONS, {
     errorMap: () => ({
-      message: "La raison du signalement est invalide",
+      message: "errors:backend.invalidInput",
     }),
   }),
 
   description: z
     .string()
     .trim()
-    .max(2000, "La description ne peut pas dépasser 2000 caractères")
+    .max(2000, "errors:backend.invalidInput")
     .optional()
     .default(""),
 });
@@ -53,7 +53,7 @@ const signalementIdSchema = z.object({
   id: z
     .string()
     .trim()
-    .min(1, "L'identifiant du signalement est requis"),
+    .min(1, "errors:backend.invalidInput"),
 });
 
 /**
@@ -126,7 +126,7 @@ const updateSignalementSchema = z
   .refine(
     (data) => Object.keys(data).length > 0,
     {
-      message: "Aucune donnée à modifier",
+      message: "errors:backend.invalidInput",
     }
   );
 
@@ -144,7 +144,7 @@ const validate = (schema, source = "body") => {
     if (!result.success) {
       return res.status(400).json({
         success: false,
-        errors: result.error.flatten(),
+        errors: require('../utils/validationErrors').localizedFlatten(result.error, req),
       });
     }
 

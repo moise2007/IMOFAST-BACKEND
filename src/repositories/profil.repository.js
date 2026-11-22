@@ -1,6 +1,5 @@
 const { db } = require("../config/firebase");
 
-const MAX_ANNONCES = 15;
 const FIRESTORE_IN_LIMIT = 30;
 
 class ProfilRepository {
@@ -36,18 +35,28 @@ class ProfilRepository {
      * @param {string} bailleurId
      * @returns {Promise<Array<Object>>}
      */
+    async getCandidatureSummary(idPublic) {
+        const snapshot = await db.collection("candidature")
+            .where("locataireId", "==", idPublic).select("statut").get();
+        const counts = {};
+        for (const doc of snapshot.docs) {
+            const status = doc.data().statut ?? "en_attente";
+            counts[status] = (counts[status] ?? 0) + 1;
+        }
+        return { total: snapshot.size, counts };
+    }
+
     async findAnnoncesByBailleur(bailleurId) {
         const snapshot = await db
             .collection("annonce")
             .where("bailleurId", "==", bailleurId)
-            .orderBy("createdAt", "desc")
-            .limit(MAX_ANNONCES)
             .get();
 
         return snapshot.docs.map((doc) => ({
             documentId: doc.id,
             ...doc.data(),
-        }));
+        })).filter(annonce => annonce.status === "publier")
+            .sort((a, b) => (b.createdAt?.seconds ?? b.createdAt?._seconds ?? 0) - (a.createdAt?.seconds ?? a.createdAt?._seconds ?? 0));
     }
 
     /**

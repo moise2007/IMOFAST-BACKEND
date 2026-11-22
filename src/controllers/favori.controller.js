@@ -50,12 +50,13 @@ const deleteFavori = asyncHandler(async (req, res) => {
  * @route GET /favoris
  */
 const getFavoris = asyncHandler(async (req, res) => {
-  const { page, limit } = req.validatedQuery;
+  const { page, limit, cursor } = req.validatedQuery;
 
   const result = await favoriService.getFavoris({
     locataireId: req.user.idPublic,
     page,
     limit,
+    cursor,
   });
 
   return res.status(200).json({

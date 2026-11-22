@@ -85,11 +85,19 @@ const getProfil = async ({ idPublic, role }) => {
     const result = new Profil({
         idPublic,
         role,
-        profil,
+        profil: Object.fromEntries(
+            ["idPublic", "nom", "prenom", "nomAgence", "typeProfil", "photoProfil", "createdAt"]
+                .filter(key => profil[key] !== undefined).map(key => [key, profil[key]])
+        ),
         annonces,
     });
 
-    return result.toJSON();
+    return {
+        ...result.toJSON(),
+        ...(role === "locataire" ? {
+            candidatureSummary: await profilRepository.getCandidatureSummary(idPublic),
+        } : {}),
+    };
 };
 
 module.exports = {

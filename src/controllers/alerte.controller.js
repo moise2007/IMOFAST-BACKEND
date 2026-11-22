@@ -1,4 +1,12 @@
-const {asyncHandler} = require("../utils/asyncHandler");
+const { asyncHandler: handleAsync } = require("../utils/asyncHandler");
+// Translate operational alert errors using the language of this request.
+const asyncHandler = (handler) => handleAsync(async (req, res, next) => {
+  try { return await handler(req, res, next); }
+  catch (error) {
+    if (error.message.startsWith("errors:alerte.")) error.message = req.t(error.message);
+    throw error;
+  }
+});
 const alerteService = require("../services/ApiService/alerte.service");
 
 const createAlerte = asyncHandler(async (req, res) => {
@@ -12,7 +20,7 @@ const createAlerte = asyncHandler(async (req, res) => {
     success: true,
     alerte,
     message:
-      "votre alerte a été publiée avec succès, les bailleurs intéressés vous contacteront via la messagerie",
+      req.t("responses:alerte.created"),
   });
 });
 
@@ -27,7 +35,7 @@ const getAlertes = asyncHandler(async (req, res) => {
     success: true,
     alertes,
     pagination,
-    message: "les alertes ont été chargées avec succès.",
+    message: req.t("responses:alerte.loaded"),
   });
 });
 
@@ -40,7 +48,7 @@ const deleteAlerte = asyncHandler(async (req, res) => {
 
   return res.status(200).json({
     success: true,
-    message: "l'alerte a été supprimée avec succès",
+    message: req.t("responses:alerte.deleted"),
   });
 });
 
@@ -54,25 +62,12 @@ const getAlerte = asyncHandler(async (req, res) => {
   return res.status(200).json({
     success: true,
     alerte,
-    message: "l'alerte a été chargée avec succès.",
+    message: req.t("responses:alerte.read"),
   });
 });
 
 
 
-const updateAlerte = asyncHandler(async (req, res) => {
-  const alerte = await alerteService.updateAlerte({
-    id: req.validatedParams.id,
-    data: req.body,
-    user: req.user,
-    role: req.role,
-  });
-
-  return res.status(200).json({
-    success: true,
-    alerte,
-    message: "l'alerte a été modifiée avec succès",
-  });
-});
-
-module.exports = { createAlerte, getAlertes, getAlerte, updateAlerte, deleteAlerte };
+const respondToAlert = asyncHandler(async (req, res) => res.json({ success: true,
+  ...await alerteService.respondToAlert({ id: req.validatedParams.id, user: req.user, role: req.role }) }));
+module.exports = { respondToAlert, createAlerte, getAlertes, getAlerte, deleteAlerte };

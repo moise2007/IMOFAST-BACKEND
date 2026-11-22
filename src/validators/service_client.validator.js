@@ -19,35 +19,41 @@ const TYPES_SIGNALEMENT = [
  * Validation d'un message au service client.
  */
 const createMessageSchema = z.object({
+    email: z.string().email().max(254).optional(),
+    telephone: z.string().trim().min(6).max(30).optional(),
+    langue: z.enum(['fr', 'en']).optional(),
     object: z
         .string()
         .trim()
-        .min(2, "L'objet doit contenir au moins 2 caractères.")
-        .max(512, "L'objet ne peut pas dépasser 512 caractères."),
+        .min(2, "errors:backend.invalidInput")
+        .max(512, "errors:backend.invalidInput"),
 
     message: z
         .string()
         .trim()
-        .min(5, "Le message doit contenir au moins 5 caractères.")
-        .max(5000, "Le message ne peut pas dépasser 5000 caractères."),
+        .min(5, "errors:backend.invalidInput")
+        .max(5000, "errors:backend.invalidInput"),
 });
 
 /**
  * Validation d'une réclamation.
  */
 const createReclamationSchema = z.object({
+    email: z.string().email().max(254).optional(),
+    telephone: z.string().trim().min(6).max(30).optional(),
+    langue: z.enum(['fr', 'en']).optional(),
     type: z.enum(TYPES_RECLAMATION),
 
     object: z
         .string()
         .trim()
-        .min(2, "L'objet est requis.")
+        .min(2, "errors:backend.invalidInput")
         .max(512),
 
     message: z
         .string()
         .trim()
-        .min(5, "Le message doit contenir au moins 5 caractères.")
+        .min(5, "errors:backend.invalidInput")
         .max(5000),
 
     paymentId: z
@@ -61,22 +67,25 @@ const createReclamationSchema = z.object({
  * Validation d'un signalement.
  */
 const createSignalementSchema = z.object({
+    email: z.string().email().max(254).optional(),
+    telephone: z.string().trim().min(6).max(30).optional(),
+    langue: z.enum(['fr', 'en']).optional(),
     type: z.enum(TYPES_SIGNALEMENT),
 
     idElement: z
         .string()
         .trim()
-        .min(1, "L'élément signalé est requis."),
+        .min(1, "errors:backend.invalidInput"),
 
     message: z
         .string()
         .trim()
-        .min(5, "La description doit contenir au moins 5 caractères.")
+        .min(5, "errors:backend.invalidInput")
         .max(5000),
 
     image: z
         .string()
-        .url("L'image doit être une URL valide.")
+        .url("errors:backend.invalidInput")
         .optional(),
 });
 
@@ -124,7 +133,7 @@ const validate = (schema, source = "body") => {
         if (!result.success) {
             return res.status(400).json({
                 success: false,
-                errors: result.error.flatten(),
+                errors: require('../utils/validationErrors').localizedFlatten(result.error, req),
             });
         }
 

@@ -64,7 +64,7 @@ const updateDataBailleur = async (req, res) => {
 
     res.status(200).json({
         success: true,
-        message: "Profil mis à jour avec succès.",
+        message: req.t("responses:backend.profileUpdated"),
         data,
     });
 };

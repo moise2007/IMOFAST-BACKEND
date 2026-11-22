@@ -7,10 +7,11 @@ const {
   createAlerteSchema,
   getAlertesSchema,
   deleteAlerteSchema,
-  getAlerteSchema,
-  updateAlerteSchema
+  getAlerteSchema
 } = require("../validators/alerte.validator");
 const routerAlerteur=express.Router()
+routerAlerteur.post('/:id/conversation', require('../middlewares/auth').authBailleur,
+  validate(getAlerteSchema, 'params'), alerteController.respondToAlert);
 
 
 
@@ -19,6 +20,5 @@ routerAlerteur.post("/",authAdminLocataire, validate(createAlerteSchema), alerte
 routerAlerteur.get("/",authBailleurLocataireAdmin, validate(getAlertesSchema, "query"), alerteController.getAlertes);
 routerAlerteur.delete("/:id", authAdminLocataire, validate(deleteAlerteSchema, "params"), alerteController.deleteAlerte)
 routerAlerteur.get("/:id",authBailleurLocataireAdmin, validate(getAlerteSchema, "params"), alerteController.getAlerte);
-routerAlerteur.patch("/:id", authAdminLocataire, validate(getAlerteSchema, "params"), validate(updateAlerteSchema), alerteController.updateAlerte);
 
 module.exports={routerAlerteur}

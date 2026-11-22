@@ -1,12 +1,14 @@
 const { z } = require("zod");
 
 const NOTIFICATION_TYPES = [
+  "annonce",
   "candidature",
   "conversation",
   "message",
   "favoris",
   "commentaire",
   "note",
+  "alerte",
 ];
 
 const TYPES_DESTINATAIRE = [
@@ -16,11 +18,14 @@ const TYPES_DESTINATAIRE = [
 
 const TYPES_CIBLE = [
   "bien",
+  "annonce",
   "candidature",
   "message",
   "conversation",
   "commentaire",
   "favoris",
+  "alerte",
+  "annonce",
 ];
 
 /**
@@ -31,30 +36,30 @@ const createNotificationSchema = z.object({
   destinataireId: z
     .string()
     .trim()
-    .min(1, "Le destinataire est requis"),
+    .min(1, "errors:backend.invalidInput"),
 
   typeDestinataire: z.enum(TYPES_DESTINATAIRE, {
     errorMap: () => ({
-      message: "Le type de destinataire est invalide",
+      message: "errors:backend.invalidInput",
     }),
   }),
 
   type: z.enum(NOTIFICATION_TYPES, {
     errorMap: () => ({
-      message: "Le type de notification est invalide",
+      message: "errors:backend.invalidInput",
     }),
   }),
 
   cibleId: z
     .string()
     .trim()
-    .min(1, "La cible de la notification est requise")
+    .min(1, "errors:backend.invalidInput")
     .optional(),
 
   typeCible: z
     .enum(TYPES_CIBLE, {
       errorMap: () => ({
-        message: "Le type de cible est invalide",
+        message: "errors:backend.invalidInput",
       }),
     })
     .optional(),
@@ -62,14 +67,14 @@ const createNotificationSchema = z.object({
   titre: z
     .string()
     .trim()
-    .max(200, "Le titre ne peut pas dépasser 200 caractères")
+    .max(200, "errors:backend.invalidInput")
     .optional()
     .default(""),
 
   message: z
     .string()
     .trim()
-    .max(2000, "Le message ne peut pas dépasser 2000 caractères")
+    .max(2000, "errors:backend.invalidInput")
     .optional()
     .default(""),
 });
@@ -81,35 +86,15 @@ const notificationIdSchema = z.object({
   id: z
     .string()
     .trim()
-    .min(1, "L'identifiant de la notification est requis"),
+    .min(1, "errors:backend.invalidInput"),
 });
 
 /**
  * Validation des paramètres de récupération des notifications.
  *
- * Exemple :
- * GET /notifications?pageSize=20&lastId=abc123
+ * La liste est limitée aux 20 notifications les plus récentes.
  */
-const getNotificationsSchema = z.object({
-  pageSize: z
-    .coerce
-    .number()
-    .int()
-    .positive()
-    .max(100)
-    .default(30),
-
-  lastId: z
-    .string()
-    .trim()
-    .min(1)
-    .optional(),
-
-  lu: z
-    .enum(["true", "false"])
-    .transform((value) => value === "true")
-    .optional(),
-});
+const getNotificationsSchema = z.object({}).strict();
 
 /**
  * Middleware générique de validation Zod.
@@ -125,7 +110,7 @@ const validate = (schema, source = "body") => {
     if (!result.success) {
       return res.status(400).json({
         success: false,
-        errors: result.error.flatten(),
+        errors: require('../utils/validationErrors').localizedFlatten(result.error, req),
       });
     }
 

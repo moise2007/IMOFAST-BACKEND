@@ -1,4 +1,5 @@
 const { admin } = require("../config/firebase")
+const { emptyNotes } = require("../utils/notesDistribution")
 const timestamp = admin.firestore.Timestamp
 const { createId } = require("@paralleldrive/cuid2");
 const { calculerCompletudeProfil } = require("../utils/completudeProfil/completudeProfil.locataire.utils");
@@ -44,6 +45,11 @@ class Locataire {
   toDataBase() {
     return {
       role: "locataire",
+      notification: { web: null, mobile: null },
+      notifications: [],
+      activiteInterne: { commentaires: 0, reponses: 0, notes: 0, conversationsCreees: 0, messagesEnvoyes: 0 },
+      notificationPreferences: { ...require("../utils/notificationPreferences").DEFAULT_NOTIFICATION_PREFERENCES },
+      notificationsActivees: true,
       nom: this.nom,
       prenom: this.prenom,
       dateNaissance: this.dateNaissance,
@@ -94,10 +100,12 @@ class Locataire {
 
       // notation Avis
       notation: {
-        moyenne: null,
-        nombreAvis: null,
+        moyenne: 0,
+        nombreAvis: 0,
         completudeProfilPourcentage: this.completudeProfilPourcentage,
       },
+
+      notes: emptyNotes(),
       role: "locataire",
       signalement: {
         total: null,

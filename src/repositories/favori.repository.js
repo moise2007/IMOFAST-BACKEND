@@ -10,6 +10,25 @@ const BIEN_COLLECTION = "bien";
  * Repository responsable de l'accès aux favoris.
  */
 class FavoriRepository {
+  async findPageByLocataire({ locataireId, limit, cursor, page = 1 }) {
+    let query = db.collection(FAVORI_COLLECTION).where("locataireId", "==", locataireId)
+      .orderBy("createdAt", "desc").orderBy(admin.firestore.FieldPath.documentId(), "desc");
+    if (cursor) {
+      const [seconds, nanos, id] = JSON.parse(Buffer.from(cursor, "base64url").toString());
+      query = query.startAfter(new Timestamp(seconds, nanos), id);
+    } else if (page > 1) query = query.offset((page - 1) * limit);
+    const snapshot = await query.limit(limit + 1).get();
+    const docs = snapshot.docs.slice(0, limit);
+    const last = docs.at(-1);
+    const hasMore = snapshot.docs.length > limit;
+    return {
+      items: docs.map(doc => ({ id: doc.id, data: doc.data() })), hasMore,
+      nextCursor: hasMore && last ? Buffer.from(JSON.stringify([
+        last.data().createdAt.seconds, last.data().createdAt.nanoseconds, last.id,
+      ])).toString("base64url") : null,
+    };
+  }
+
   /**
    * Recherche un favori appartenant à un locataire
    * pour une annonce donnée.

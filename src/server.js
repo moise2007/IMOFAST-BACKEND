@@ -6,6 +6,7 @@ const { Currency } = require("./services/auto/monnaie.auto")
 const { Users } = require("./services/auto/usersGetting")
 const { demarrerAutoAnnonce } = require("./services/auto/authAnnonce")
 const { initSocket } = require("./config/socket.io")
+const { setNotificationIo } = require("./notifications/realtime")
 const { initCache, autoSaveCache } = require("./cache/cache.index")
 
 const {db} = require("./config/firebase")
@@ -38,29 +39,20 @@ const io = new Server(server,{
         credentials: true
     }
 })
+app.set("io", io)
+setNotificationIo(io)
 initSocket(io)
 
 
 async function startServer(){
-    try{
-        /*============================================
-        = service l'automatisation
-        =============================================*/
-        const data = calculerCompletudeProfil(locataireTest)
-        console.log(data)
-        await Currency.autoUpdateCurrency()
-        await Users.getCacheContact()
-        demarrerAutoAnnonce()
-        await initCache()
-        autoSaveCache()
-        console.log("tous est pret")
-
-        
-
-        
-    }catch(err){
-        console.error(err)
-    }
+    // A currency provider failure must not disable publication or cache jobs.
+    await initCache().catch(error => console.error('cache-init', error));
+    autoSaveCache();
+    demarrerAutoAnnonce();
+    require("./services/auto/publication.auto").startPublicationJobs();
+    require("./services/auto/selection-annonce.auto").startSelectionJob();
+    const results = await Promise.allSettled([Currency.autoUpdateCurrency(), Users.getCacheContact()]);
+    for (const result of results) if (result.status === 'rejected') console.error(result.reason);
 }
 startServer()
 

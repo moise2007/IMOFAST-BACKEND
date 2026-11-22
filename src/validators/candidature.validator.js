@@ -6,7 +6,7 @@ const { z } = require("zod");
  * @type {import("zod").ZodObject}
  */
 const createCandidatureSchema = z.object({
-  annonceId: z.string().min(1, "annonceId est requis"),
+  annonceId: z.string().min(1, "errors:backend.invalidInput"),
 
   type: z.enum(["visite", "demande"]),
 
@@ -45,7 +45,7 @@ const createCandidatureSchema = z.object({
  * @type {import("zod").ZodObject}
  */
 const candidatureActionSchema = z.object({
-  id: z.string().min(1, "L'identifiant est requis"),
+  id: z.string().min(1, "errors:backend.invalidInput"),
 });
 
 /**
@@ -94,8 +94,8 @@ const updateCandidatureSchema = z.object({
  * @type {import("zod").ZodObject}
  */
 const programmerCandidatureSchema = z.object({
-  date: z.string().min(1, "La date est requise"),
-  time: z.string().min(1, "L'heure est requise"),
+  date: z.string().min(1, "errors:backend.invalidInput"),
+  time: z.string().min(1, "errors:backend.invalidInput"),
 });
 
 /**
@@ -161,7 +161,7 @@ function validate(schema, source = "body") {
     if (!result.success) {
       return res.status(400).json({
         success: false,
-        errors: result.error.flatten(),
+        errors: require('../utils/validationErrors').localizedFlatten(result.error, req),
       });
     }
 

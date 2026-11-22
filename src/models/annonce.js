@@ -1,5 +1,7 @@
 const { admin } = require("../config/firebase")
+const { emptyNotes } = require("../utils/notesDistribution")
 const timestamp = admin.firestore.Timestamp
+const {generateId} = require("../utils/generateId")
 class Annonce {
     constructor({
         bienId,
@@ -11,11 +13,12 @@ class Annonce {
         devise,
         nature,
         verifie=false,
-        idPublic,
         metaData = null,
+        status,
+        datePublication,
     }) {
+        this.publication = require("../utils/publication").publicationFields({ status, datePublication, dateExpiration });
         this.bienId = bienId
-        this.idPublic = idPublic
         this.loyer = loyer
         this.bailleurId = bailleurId
         this.titre = titre
@@ -29,7 +32,7 @@ class Annonce {
 
     toFirebase() {
 
-        const prix = this.loyer.map((option)=>option?.prix).filter(p=>p!= null)
+        const prix = (Array.isArray(this.loyer) ? this.loyer : [this.loyer]).map((option)=>option?.prix).filter(p=>p!= null)
         const prixMin = Math.min(...prix)
         const prixMax = Math.max(...prix)
 
@@ -50,28 +53,31 @@ class Annonce {
         motCles.push(...adapte(this.description).toLowerCase().split(" "))
         motCles.push(...adapte(this.titre).toLowerCase().split(" "))
         motCles.push(...adapte(this.description).normalize("NFD").split(" "))
-        motCles.push(...adapte(this.titre).normalize("NFD").split(" "))  
+        motCles.push(...adapte(this.titre).normalize("NFD").split(" "))
 
         motCles = motCles.filter(word=>word?.length > 2)
         motCles = [...new Set(motCles)]
 
 
         return {
-            //  Références 
+            //  Références
             bienId:          this.bienId,
             bailleurId:      this.bailleurId,
-            idPublic: this.idPublic,
+            idPublic:  generateId("annonce"),
 
-            //  Contenu 
+            //  Contenu
             titre:           this.titre,
             description: this.description,
 
-            //  Produit automatiquement 
+            //  Produit automatiquement
             status: "publier",      // "publier" | "suspendus" | "expirer" | "louer"
             estPubliee: true,
             datePublication: new Date().toISOString(),
-            dateExpiration:  this.dateExpiration ?? null,
-            notes: {1:0 ,2:0, 3:0, 4:0, 5:0},
+            dateExpiration: this.dateExpiration ? new Date(this.dateExpiration).toISOString() : null,
+            ...this.publication,
+            publicationNotificationPending: this.publication.status === "publier",
+            notes: emptyNotes(),
+            vues: { simple: 0, profonde: 0 },
             metaData: {
                 note: this.metaData?.note ?? 20
             },
@@ -85,11 +91,11 @@ class Annonce {
                 maxPrix:prixMax
             },
 
-            //  Tarification 
+            //  Tarification
             loyer: this.loyer,
             devise: this?.devise ?? "XAF",
 
-            // UX Data 
+            // UX Data
             statistiques : {
                 vues: 0 ,
                 commentaires: 0,

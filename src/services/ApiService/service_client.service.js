@@ -21,6 +21,7 @@ const createBusinessError = (
 ) => {
     const error = new Error(message);
     error.statusCode = statusCode;
+    error.isOperational = true;
 
     throw error;
 };
@@ -49,7 +50,7 @@ const createMessage = async ({
 
     const result = await serviceClientRepository.create(
         "message_user",
-        message.toFirebase()
+        { ...message.toFirebase(), contact: { email: data.email || user?.email || null, telephone: data.telephone || user?.telephone || null }, langue: user?.langue || data.langue || "fr" }
     );
 
     return result.data;
@@ -81,7 +82,7 @@ const createReclamation = async ({
 
     const result = await serviceClientRepository.create(
         "reclamation",
-        reclamation.toFirebase()
+        { ...reclamation.toFirebase(), contact: { email: data.email || user?.email || null, telephone: data.telephone || user?.telephone || null }, langue: user?.langue || data.langue || "fr" }
     );
 
     return result.data;
@@ -113,7 +114,7 @@ const createSignalement = async ({
 
     const result = await serviceClientRepository.create(
         "signalement",
-        signalement.toFirebase()
+        { ...signalement.toFirebase(), contact: { email: data.email || user?.email || null, telephone: data.telephone || user?.telephone || null }, langue: user?.langue || data.langue || "fr" }
     );
 
     return result.data;
@@ -162,6 +163,7 @@ const getDemandes = async ({
                 demande.id === filters.lastId
         );
 
+        if (index === -1) createBusinessError("errors:backend.invalidCursor", 400);
         if (index !== -1) {
             startIndex = index + 1;
         }
@@ -177,7 +179,7 @@ const getDemandes = async ({
 
     return {
         demandes: result,
-        total: result.length,
+        total: demandes.length,
         lastId:
             lastDemande?.idPublic ??
             lastDemande?.id ??
@@ -211,7 +213,7 @@ const getDemande = async ({
 
     if (!collection) {
         createBusinessError(
-            "Type de demande invalide.",
+            "errors:backend.invalidInput",
             400
         );
     }
@@ -224,14 +226,14 @@ const getDemande = async ({
 
     if (!result) {
         createBusinessError(
-            "La demande n'existe pas.",
+            "errors:backend.notFound",
             404
         );
     }
 
     if (result.data.userId !== userId) {
         createBusinessError(
-            "Vous n'êtes pas autorisé à consulter cette demande.",
+            "errors:backend.forbidden",
             403
         );
     }
@@ -243,7 +245,16 @@ const getDemande = async ({
     };
 };
 
+async function getContacts() {
+    const saved = await serviceClientRepository.getContacts();
+    return {
+        email: saved.email || process.env.SUPPORT_EMAIL || 'contact@imofast.org',
+        telephone: saved.telephone || process.env.SUPPORT_PHONE || null,
+        whatsapp: saved.whatsapp || process.env.SUPPORT_WHATSAPP || null,
+    };
+}
 module.exports = {
+    getContacts,
     createMessage,
     createReclamation,
     createSignalement,

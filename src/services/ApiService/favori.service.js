@@ -77,7 +77,8 @@ const createFavori = async ({
     annonce.id
   );
 
-  return createdFavori.data;
+  const biens = await favoriRepository.findBiensByPublicIds([annonce.data.bienId]);
+  return { ...createdFavori.data, annonce: annonce.data, bien: biens[0] ?? null };
 };
 
 /**
@@ -146,35 +147,9 @@ const deleteFavori = async ({
  * @param {number} params.limit
  * @returns {Promise<Object>}
  */
-const getFavoris = async ({
-  locataireId,
-  page,
-  limit,
-}) => {
-  const favoris =
-    await favoriRepository.findAllByLocataire({
-      locataireId,
-    });
-
-  /**
-   * Pagination côté application.
-   *
-   * Pour un grand volume de favoris, il faudra évoluer
-   * vers une pagination Firestore par curseur.
-   */
-  const start = (page - 1) * limit;
-  const end = start + limit;
-
-  const paginatedFavoris =
-    favoris.slice(start, end);
-
-  if (!paginatedFavoris.length) {
-    return {
-      total: favoris.length,
-      favoris: [],
-    };
-  }
-
+const getFavoris = async ({ locataireId, page, limit, cursor }) => {
+  const { items: paginatedFavoris, hasMore, nextCursor } = await favoriRepository.findPageByLocataire({ locataireId, page, limit, cursor });
+  if (!paginatedFavoris.length) return { total: 0, favoris: [], hasMore: false, nextCursor: null };
   /**
    * Récupération des annonces.
    */
@@ -245,7 +220,8 @@ const getFavoris = async ({
     .filter(Boolean);
 
   return {
-    total: favoris.length,
+    total: result.length,
+    hasMore, nextCursor,
     favoris: result,
   };
 };

@@ -45,12 +45,12 @@ class Users {
         const allUsers = []
         let dernierDOc = null
         for(let i=0; i< taille;i+= 150){
-            const query = db.collection(collection)
+            let query = db.collection(collection)
                 .orderBy("__name__")
                 .limit(150)
 
             if(dernierDOc){
-                query.startAfter(dernierDOc)
+                query = query.startAfter(dernierDOc)
             }
 
             const snapshot = await query.get()
@@ -95,11 +95,11 @@ class Users {
                 annonces,
                 biens
             ] = await Promise.all([
-                Users.getUser(10, "locataire"),
-                Users.getUser(10, "bailleur"),
-                Users.getUser(10, "admin"),
-                Users.getUser(10, "annonce"),
-                Users.getUser(10, "bien")
+                Users.getUser(Users.SIZE.locataire, "locataire"),
+                Users.getUser(Users.SIZE.bailleur, "bailleur"),
+                Users.getUser(Users.SIZE.admin, "admin"),
+                Users.getUser(Users.SIZE.annonce, "annonce"),
+                Users.getUser(Users.SIZE.bien, "bien")
             ]);
 
             // Mise en cache

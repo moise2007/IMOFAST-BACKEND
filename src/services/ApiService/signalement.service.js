@@ -13,6 +13,7 @@ const signalementRepository = require("../../repositories/signalement.repository
 const createBusinessError = (message, statusCode = 400) => {
   const error = new Error(message);
   error.statusCode = statusCode;
+  error.isOperational = true;
 
   throw error;
 };
@@ -27,6 +28,10 @@ const createBusinessError = (message, statusCode = 400) => {
  */
 const createSignalement = async ({ data, user }) => {
   const idAuteur = user.idPublic;
+  if (data.typeCible === 'annonce') {
+    const annonce = await require('../../repositories/annonce.repository').findByIdPublic(data.idCible);
+    if (!annonce || annonce.status !== 'publier') createBusinessError('errors:backend.notFound', 404);
+  }
 
   const duplicate = await signalementRepository.findDuplicate({
     idAuteur,
@@ -37,7 +42,7 @@ const createSignalement = async ({ data, user }) => {
 
   if (duplicate) {
     createBusinessError(
-      "Vous avez déjà effectué ce signalement.",
+      "errors:backend.alreadyReported",
       409
     );
   }
@@ -52,9 +57,11 @@ const createSignalement = async ({ data, user }) => {
   });
 
   const result = await signalementRepository.create(
-    signalement.toFirebase()
+    { ...signalement.toFirebase(), emailAdminPending: data.typeCible === "annonce" }
   );
 
+  if (data.typeCible === 'annonce') await require('../signalementMail.service').deliver(result.documentId, result.signalement)
+    .catch(error => console.error('report-mail', error.code || error.name));
   return result.signalement;
 };
 
@@ -105,7 +112,7 @@ const getSignalement = async ({
 
   if (!result) {
     createBusinessError(
-      "Le signalement n'existe pas.",
+      "errors:backend.notFound",
       404
     );
   }
@@ -115,7 +122,7 @@ const getSignalement = async ({
     result.signalement.idAuteur !== user.idPublic
   ) {
     createBusinessError(
-      "Vous n'êtes pas autorisé à consulter ce signalement.",
+      "errors:backend.forbidden",
       403
     );
   }
@@ -145,14 +152,14 @@ const updateSignalement = async ({
 
   if (!result) {
     createBusinessError(
-      "Le signalement n'existe pas.",
+      "errors:backend.notFound",
       404
     );
   }
 
   if (result.signalement.statut !== "en_attente") {
     createBusinessError(
-      "Ce signalement ne peut plus être modifié.",
+      "errors:backend.closedReport",
       409
     );
   }
@@ -194,14 +201,14 @@ const deleteSignalement = async ({
 
   if (!result) {
     createBusinessError(
-      "Le signalement n'existe pas.",
+      "errors:backend.notFound",
       404
     );
   }
 
   if (result.signalement.statut !== "en_attente") {
     createBusinessError(
-      "Ce signalement ne peut plus être supprimé.",
+      "errors:backend.closedReport",
       409
     );
   }

@@ -20,68 +20,73 @@ const { z } = require("zod");
  * @returns {*} Valeur normalisée.
  */
 const emptyToUndefined = (value) =>
-  value === "" || value === "null" || value === "undefined"
+  value === null ||
+  value === "" ||
+  value === "null" ||
+  value === "undefined"
     ? undefined
     : value;
 
 /**
  * Schéma de création d'une annonce.
  */
+const publicationStatus = z.enum(['brouillon', 'programmee', 'programmée', 'publier', 'active', 'en_ligne', 'en ligne', 'suspendus', 'expirer', 'louer']);
 const createAnnonceSchema = z.object({
+  nature: z.enum(['location', 'vente']).optional(),
+  status: publicationStatus.optional(),
+  datePublication: z.string().datetime({ offset: true }).nullable().optional(),
   titre: z
     .string({
-      message: "le titre est obligatoire",
+      message: "errors:backend.invalidInput",
     })
     .trim()
-    .min(3, "le titre doit contenir au moins 3 caractères")
-    .max(150, "le titre ne peut pas dépasser 150 caractères"),
+    .min(3, "errors:backend.invalidInput")
+    .max(150, "errors:backend.invalidInput"),
 
   description: z
     .string({
-      message: "la description est obligatoire",
+      message: "errors:backend.invalidInput",
     })
     .trim()
-    .min(10, "la description doit contenir au moins 10 caractères"),
+    .min(10, "errors:backend.invalidInput"),
 
   bienId: z
     .string({
-      message: "l'identifiant du bien est obligatoire",
+      message: "errors:backend.invalidInput",
     })
     .trim()
-    .min(1, "identifiant du bien invalide")
-    .max(50, "identifiant du bien invalide"),
+    .min(1, "errors:backend.invalidInput")
+    .max(50, "errors:backend.invalidInput"),
 
   loyer: z.union([
     z.array(
       z.object({
-        caution: z.number(),
+        caution: z.number().nonnegative(),
         duree: z.enum(["annee", "mois", "semaine", "jour"]),
-        fraisVisite: z.number(),
-        min: z.number().optional(),
-        prix: z.number(),
+        fraisVisite: z.number().nonnegative(),
+        min: z.number().int().min(1).max(1200).optional(),
+        prix: z.number().nonnegative(),
         valeur: z.literal(1).optional(),
       })
-    ),
+    ).min(1).max(10),
 
     z.object({
-      prix: z.number(),
+      prix: z.number().nonnegative(),
     })
   ]),
 
   devise: z
     .string({
-      message: "la devise est obligatoire",
+      message: "errors:backend.invalidInput",
     })
     .trim()
-    .min(1, "la devise est obligatoire")
+    .min(1, "errors:backend.invalidInput")
     .toUpperCase(),
 
-  dateExpiration: z
-    .preprocess(
-      emptyToUndefined,
-      z.coerce.date({ message: "la date d'expiration est invalide" })
-    )
-    .optional(),
+  dateExpiration: z.preprocess(
+    (value) => value === "" || value === "null" ? null : value,
+    z.coerce.date().nullable()
+  ).optional(),
 });
 
 /**
@@ -92,14 +97,18 @@ const createAnnonceSchema = z.object({
  */
 const getAnnoncesSchema = z
   .object({
+    status: publicationStatus.optional(),
+    duree: z.enum(['annee', 'mois', 'semaine', 'jour']).optional(),
+    nombreDurees: z.coerce.number().int().min(1).max(1200).optional(),
+    sort: z.enum(["recent", "populaire", "prixCroissant", "prixDecroissant"]).optional(),
     page: z.preprocess(
       emptyToUndefined,
       z.coerce
         .number({
-          message: "la page doit être un nombre",
+          message: "errors:backend.invalidInput",
         })
-        .int("la page doit être un entier")
-        .min(1, "la page doit être supérieure ou égale à 1")
+        .int("errors:backend.invalidInput")
+        .min(1, "errors:backend.invalidInput").max(100)
         .default(1)
     ),
 
@@ -107,22 +116,22 @@ const getAnnoncesSchema = z
       emptyToUndefined,
       z.coerce
         .number({
-          message: "la limite doit être un nombre",
+          message: "errors:backend.invalidInput",
         })
-        .int("la limite doit être un entier")
-        .min(1, "la limite doit être supérieure ou égale à 1")
-        .max(50, "la limite ne peut pas dépasser 50")
+        .int("errors:backend.invalidInput")
+        .min(1, "errors:backend.invalidInput")
+        .max(50, "errors:backend.invalidInput")
         .default(10)
     ),
 
     search: z.preprocess(
       emptyToUndefined,
-      z.string().trim().optional()
+      z.string().trim().max(256).optional()
     ),
 
     titre: z.preprocess(
       emptyToUndefined,
-      z.string().trim().optional()
+      z.string().trim().max(256).optional()
     ),
 
     ville: z.preprocess(
@@ -144,9 +153,9 @@ const getAnnoncesSchema = z
       emptyToUndefined,
       z.coerce
         .number({
-          message: "prixMin doit être un nombre",
+          message: "errors:backend.invalidInput",
         })
-        .min(0, "prixMin ne peut pas être négatif")
+        .min(0, "errors:backend.invalidInput")
         .optional()
     ),
 
@@ -154,17 +163,22 @@ const getAnnoncesSchema = z
       emptyToUndefined,
       z.coerce
         .number({
-          message: "prixMax doit être un nombre",
+          message: "errors:backend.invalidInput",
         })
-        .min(0, "prixMax ne peut pas être négatif")
+        .min(0, "errors:backend.invalidInput")
         .optional()
     ),
 
     natureAnnonce: z.preprocess(
       emptyToUndefined,
       z.enum(["vente", "location"], {
-        message: "nature de l'annonce invalide",
+        message: "errors:backend.invalidInput",
       }).optional()
+    ),
+
+    typeBien: z.preprocess(
+      emptyToUndefined,
+      z.enum(["logement", "terrain", "boutique", "bureau"]).optional()
     ),
 
     type: z.preprocess(
@@ -173,15 +187,15 @@ const getAnnoncesSchema = z
         ["appartement", "villa", "duplex", "studio", "chambre"],
         {
           message:
-            "type invalide (appartement, villa, duplex, studio ou chambre)",
+            "errors:backend.invalidInput",
         }
       ).optional()
     ),
 
     nature: z.preprocess(
       emptyToUndefined,
-      z.enum(["moderne", "simple", "meubler"], {
-        message: "nature invalide (moderne, simple ou meubler)",
+      z.enum(["moderne", "simple", "meubler", "meuble"], {
+        message: "errors:backend.invalidInput",
       }).optional()
     ),
 
@@ -189,10 +203,10 @@ const getAnnoncesSchema = z
       emptyToUndefined,
       z.coerce
         .number({
-          message: "le nombre de chambres doit être un nombre",
+          message: "errors:backend.invalidInput",
         })
-        .int("le nombre de chambres doit être un entier")
-        .min(0, "le nombre de chambres ne peut pas être négatif")
+        .int("errors:backend.invalidInput")
+        .min(0, "errors:backend.invalidInput")
         .optional()
     ),
 
@@ -200,10 +214,10 @@ const getAnnoncesSchema = z
       emptyToUndefined,
       z.coerce
         .number({
-          message: "le nombre de douches doit être un nombre",
+          message: "errors:backend.invalidInput",
         })
-        .int("le nombre de douches doit être un entier")
-        .min(0, "le nombre de douches ne peut pas être négatif")
+        .int("errors:backend.invalidInput")
+        .min(0, "errors:backend.invalidInput")
         .optional()
     ),
   })
@@ -213,7 +227,7 @@ const getAnnoncesSchema = z
       data.prixMax === undefined ||
       data.prixMin <= data.prixMax,
     {
-      message: "prixMin doit être inférieur ou égal à prixMax",
+      message: "errors:backend.invalidInput",
       path: ["prixMin"],
     }
   );
@@ -224,11 +238,11 @@ const getAnnoncesSchema = z
 const getAnnonceSchema = z.object({
   id: z
     .string({
-      message: "l'identifiant est obligatoire",
+      message: "errors:backend.invalidInput",
     })
     .trim()
-    .min(1, "identifiant invalide")
-    .max(50, "identifiant invalide"),
+    .min(1, "errors:backend.invalidInput")
+    .max(50, "errors:backend.invalidInput"),
 });
 
 /**
@@ -237,11 +251,11 @@ const getAnnonceSchema = z.object({
 const deleteAnnonceSchema = z.object({
   id: z
     .string({
-      message: "l'identifiant est obligatoire",
+      message: "errors:backend.invalidInput",
     })
     .trim()
-    .min(1, "identifiant invalide")
-    .max(50, "identifiant invalide"),
+    .min(1, "errors:backend.invalidInput")
+    .max(50, "errors:backend.invalidInput"),
 });
 
 /**
@@ -260,6 +274,9 @@ const champsModifiables = {
   loyer: true,
   devise: true,
   dateExpiration: true,
+  datePublication: true,
+  status: true,
+  nature: true,
 };
 
 /**
@@ -275,7 +292,7 @@ const updateAnnonceSchema = createAnnonceSchema
   .partial()
   .strict()
   .refine((data) => Object.keys(data).length > 0, {
-    message: "aucun champ à modifier",
+    message: "errors:backend.invalidInput",
   });
 
 /**
@@ -287,16 +304,14 @@ const updateAnnonceSchema = createAnnonceSchema
  */
 const validate = (schema, source = "body") => (req, res, next) => {
 
-  
+
   const result = schema.safeParse(req[source]);
-  console.log(result.error)
 
   if (!result.success) {
-    console.log("la verificattion a echouer")
     return res.status(400).json({
       success: false,
-      message: "Données invalides",
-      errors: result.error.issues.map((issue) => ({
+      message: req.t("errors:backend.invalidInput"),
+      errors: require('../utils/validationErrors').localizedIssues(result.error, req).map((issue) => ({
         champ: issue.path.join("."),
         message: issue.message,
       })),

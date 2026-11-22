@@ -16,11 +16,18 @@ const {
     createMessageSchema,
     createReclamationSchema,
     createSignalementSchema,
-    getDemandeSchema,
+    getDemandesSchema,
+    demandeIdSchema,
     validate,
 } = require("../validators/service_client.validator");
 
 const routerServiceClient = express.Router();
+const controller = require('../controllers/service_client.controller');
+const { z } = require('zod');
+routerServiceClient.get('/contacts', controller.getContacts);
+routerServiceClient.get('/demandes/:id', authBailleurLocataireAdmin, validate(demandeIdSchema, 'params'),
+  validate(z.object({ type: z.enum(['message', 'reclamation', 'signalement']) }), 'query'), controller.getDemande);
+
 
 /**
  * Envoie un message au service client.
@@ -58,7 +65,7 @@ routerServiceClient.post(
 routerServiceClient.get(
     "/getDemande",
     authBailleurLocataireAdmin,
-    validate(getDemandeSchema, "query"),
+    validate(getDemandesSchema, "query"),
     getDemandes
 );
 

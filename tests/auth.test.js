@@ -1,30 +1,33 @@
+require("dotenv").config({ quiet: true });
+const { describe, it } = require("node:test");
+const assert = require("node:assert/strict");
 const request = require("supertest");
-const app = require("../src/app");
+const { app } = require("../src/app");
 
 describe("Authentication API Integration Tests", () => {
     it("should fail validation for empty register payload", async () => {
         const res = await request(app)
-            .post("/auth/register")
+            .post("/api/auth/register")
             .send({});
 
-        expect(res.statusCode).toEqual(400);
-        expect(res.body).toHaveProperty("success", false);
+        assert.equal(res.statusCode, 400);
+        assert.equal(res.body.success, false);
     });
 
     it("should fail validation for empty login payload", async () => {
         const res = await request(app)
-            .post("/auth/login")
+            .post("/api/auth/login")
             .send({});
 
-        expect(res.statusCode).toEqual(400);
-        expect(res.body).toHaveProperty("success", false);
+        assert.equal(res.statusCode, 400);
+        assert.equal(res.body.success, false);
     });
 
     it("should fail password update without authentication", async () => {
         const res = await request(app)
-            .patch("/auth/password")
+            .patch("/api/auth/password")
             .send({ oldPassword: "123", newPassword: "456" });
 
-        expect(res.statusCode).toBeGreaterThanOrEqual(401);
+        assert.equal(res.statusCode, 401);
     });
 });

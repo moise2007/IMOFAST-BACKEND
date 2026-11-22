@@ -392,7 +392,7 @@ const deleteSession = async (sessionId) => {
     }
 
     await db
-        .collection("sessions")
+        .collection("session")
         .doc(sessionId)
         .delete();
 };
@@ -470,7 +470,7 @@ const verifiedPasswordResetToken = async ({
  * Vérifie un token Firebase utilisé pour l'authentification Google.
  *
  * @param {string} idToken
- * @returns {Promise<Object>} 
+ * @returns {Promise<Object>}
  */
 const verifyGoogleToken = async (idToken) => {
     const decodedToken = await verifyGoogleTokenAuth(idToken)

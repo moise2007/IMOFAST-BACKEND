@@ -1,31 +1,41 @@
 const { asyncHandler } = require("../utils/asyncHandler");
-
 const noteService = require("../services/ApiService/note.service");
 
 /**
- * Crée une note.
- *
- * @route POST /notes
+ * POST /notes  → créer ou mettre à jour selon existence
+ * (valeur = 0 supprime)
+ */
+const voter = asyncHandler(async (req, res) => {
+  const result = await noteService.voter({
+    data: req.validatedBody,
+    user: req.user,
+  });
+
+  return res.status(200).json({
+    success: true,
+    ...result,
+    msg: req.t("success.vote_note", { ns: "responses" }),
+  });
+});
+
+/**
+ * POST /notes/create  → création stricte (409 si déjà voté)
  */
 const createNote = asyncHandler(async (req, res) => {
-  const note = await noteService.createNote({
+  const result = await noteService.createNote({
     data: req.validatedBody,
     user: req.user,
   });
 
   return res.status(201).json({
     success: true,
-    note,
-    msg: req.t("success.create_note", {
-      ns: "responses",
-    }),
+    ...result,
+    msg: req.t("success.create_note", { ns: "responses" }),
   });
 });
 
 /**
- * Récupère les notes selon les filtres.
- *
- * @route GET /notes
+ * GET /notes
  */
 const getNotes = asyncHandler(async (req, res) => {
   const result = await noteService.getNotes({
@@ -37,16 +47,12 @@ const getNotes = asyncHandler(async (req, res) => {
   return res.status(200).json({
     success: true,
     ...result,
-    msg: req.t("success.get_note", {
-      ns: "responses",
-    }),
+    msg: req.t("success.get_note", { ns: "responses" }),
   });
 });
 
 /**
- * Récupère une note par son identifiant public.
- *
- * @route GET /notes/:id
+ * GET /notes/:id
  */
 const getNote = asyncHandler(async (req, res) => {
   const { id } = req.validatedParams;
@@ -57,21 +63,42 @@ const getNote = asyncHandler(async (req, res) => {
     role: req.role,
   });
 
-  return res.status(200).json({
-    success: true,
-    note,
-  });
+  return res.status(200).json({ success: true, note });
 });
 
 /**
- * Modifie une note appartenant à l'utilisateur connecté.
- *
- * @route PATCH /notes/:id
+ * GET /notes/ma-note?cibleId=...&typeCible=...
+ */
+const getMaNote = asyncHandler(async (req, res) => {
+  const { cibleId, typeCible } = req.validatedQuery;
+
+  const note = await noteService.getMaNote({
+    cibleId,
+    typeCible,
+    user: req.user,
+  });
+
+  return res.status(200).json({ success: true, note });
+});
+
+/**
+ * GET /notes/agregat?cibleId=...&typeCible=...
+ */
+const getNotesAgregat = asyncHandler(async (req, res) => {
+  const { cibleId, typeCible } = req.validatedQuery;
+
+  const notes = await noteService.getNotesAgregat({ cibleId, typeCible });
+
+  return res.status(200).json({ success: true, notes });
+});
+
+/**
+ * PATCH /notes/:id
  */
 const updateNote = asyncHandler(async (req, res) => {
   const { id } = req.validatedParams;
 
-  const note = await noteService.updateNote({
+  const result = await noteService.updateNote({
     idPublic: id,
     valeur: req.validatedBody.valeur,
     user: req.user,
@@ -79,38 +106,56 @@ const updateNote = asyncHandler(async (req, res) => {
 
   return res.status(200).json({
     success: true,
-    note,
-    msg: req.t("success.update_note", {
-      ns: "responses",
-    }),
+    ...result,
+    msg: req.t("success.update_note", { ns: "responses" }),
   });
 });
 
 /**
- * Supprime une note appartenant à l'utilisateur connecté.
- *
- * @route DELETE /notes/:id
+ * DELETE /notes/:id
  */
 const deleteNote = asyncHandler(async (req, res) => {
   const { id } = req.validatedParams;
 
-  await noteService.deleteNote({
+  const result = await noteService.deleteNote({
     idPublic: id,
     user: req.user,
   });
 
   return res.status(200).json({
     success: true,
-    msg: req.t("success.delete_note", {
-      ns: "responses",
-    }),
+    ...result,
+    msg: req.t("success.delete_note", { ns: "responses" }),
+  });
+});
+
+/**
+ * DELETE /notes/ma-note?cibleId=...&typeCible=...
+ */
+const supprimerMaNote = asyncHandler(async (req, res) => {
+  const { cibleId, typeCible } = req.validatedQuery;
+
+  const result = await noteService.supprimerMaNote({
+    cibleId,
+    typeCible,
+    user: req.user,
+  });
+
+  return res.status(200).json({
+    success: true,
+    ...result,
+    msg: req.t("success.delete_note", { ns: "responses" }),
   });
 });
 
 module.exports = {
+  voter,
   createNote,
   getNotes,
   getNote,
+  getMaNote,
+  getNotesAgregat,
   updateNote,
   deleteNote,
+  supprimerMaNote,
 };

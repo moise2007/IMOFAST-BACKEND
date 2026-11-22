@@ -51,7 +51,7 @@ const createCommentaire = async ({
   } = data;
 
   if (!isValidTypeCible(typeCible)) {
-    const error = new Error("Type de cible invalide.");
+    const error = new Error("errors:backend.invalidInput");
     error.statusCode = 409;
     throw error;
   }
@@ -62,7 +62,7 @@ const createCommentaire = async ({
   );
 
   if (!cible) {
-    const error = new Error("La cible du commentaire est introuvable.");
+    const error = new Error("errors:backend.notFound");
     error.statusCode = 404;
     throw error;
   }
@@ -89,6 +89,10 @@ const createCommentaire = async ({
 
   if (typeCible === "annonce") {
     await commentaireRepository.incrementAnnonceCommentaires( cibleId );
+    await require('../notification.service').createNotification({
+      destinataireId: cible.bailleurId ?? cible.data?.()?.bailleurId, typeDestinataire: 'bailleur', type: 'commentaire',
+      cibleId, typeCible: 'annonce', titreKey: 'backend.push.commentTitle', messageKey: 'backend.push.commentBody',
+    });
   }
 
   return commentaireSnapshot.data();
@@ -111,7 +115,7 @@ const getCommentaires = async ({
   lastId,
 }) => {
   if (!isValidTypeCible(typeCible)) {
-    const error = new Error("Type de cible invalide.");
+    const error = new Error("errors:backend.invalidInput");
     error.statusCode = 400;
     throw error;
   }
@@ -122,7 +126,7 @@ const getCommentaires = async ({
   );
 
   if (!cible) {
-    const error = new Error("La cible est introuvable.");
+    const error = new Error("errors:backend.notFound");
     error.statusCode = 404;
     throw error;
   }
@@ -159,7 +163,7 @@ const updateCommentaire = async ({
     });
 
   if (!commentaire) {
-    const error = new Error("Commentaire introuvable.");
+    const error = new Error("errors:backend.notFound");
     error.statusCode = 404;
     throw error;
   }
@@ -195,7 +199,7 @@ const deleteCommentaire = async ({
     });
 
   if (!commentaire) {
-    const error = new Error("Commentaire introuvable.");
+    const error = new Error("errors:backend.notFound");
     error.statusCode = 404;
     throw error;
   }
@@ -236,7 +240,7 @@ const respondToCommentaire = async ({
     await commentaireRepository.findByPublicId(idPublic);
 
   if (!commentaire) {
-    const error = new Error("Commentaire introuvable.");
+    const error = new Error("errors:backend.notFound");
     error.statusCode = 404;
     throw error;
   }

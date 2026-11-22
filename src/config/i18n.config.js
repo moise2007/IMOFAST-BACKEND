@@ -7,7 +7,8 @@ i18next
     .use(Backend)
     .use(middleware.LanguageDetector)
     .init({
-        fallbackLng: 'fr',     
+        initAsync: false,
+        fallbackLng: 'fr',
         supportedLngs: ['fr', 'en'],
         preload: ['fr', 'en'],
         ns: ['errors', 'responses', 'emails'],
@@ -16,7 +17,7 @@ i18next
             loadPath: path.join(__dirname, '../locales/{{lng}}/{{ns}}.json'),
         },
         detection: {
-            order: ['header', 'querystring'], 
+            order: ['header', 'querystring'],
             lookupQuerystring: 'lang',
             lookupHeader: 'accept-language',
             caches: false,

@@ -1,6 +1,7 @@
 const express = require("express");
 
 const {
+  authBailleurLocataire,
   authBailleurLocataireAdmin,
 } = require("../middlewares/auth");
 
@@ -13,7 +14,26 @@ const {
   getNotificationsSchema,
 } = require("../validators/notification.validator");
 
+const {z} = require("zod");
+const {isPushEndpoint} = require("../notifications/push/messagePush");
 const routerNotification = express.Router();
+
+const webSubscription = z.object({
+  account: z.string().min(1),
+  web: z.object({
+    endpoint: z.string().max(4096).refine(isPushEndpoint),
+    expirationTime: z.number().nullable().optional(),
+    keys: z.object({
+      p256dh: z.string().regex(/^[A-Za-z0-9_-]{87}$/),
+      auth: z.string().regex(/^[A-Za-z0-9_-]{22}$/),
+    }),
+  }),
+});
+routerNotification.post('/subscribe', authBailleurLocataire, validate(webSubscription), notificationController.subscribe);
+routerNotification.delete('/subscribe', authBailleurLocataire, validate(z.object({ endpoint: z.string().url().max(4096) })), notificationController.unsubscribe);
+const preferenceFields = Object.fromEntries(Object.keys(require('../utils/notificationPreferences').DEFAULT_NOTIFICATION_PREFERENCES).map(key => [key, z.boolean().optional()]));
+routerNotification.get('/preferences', authBailleurLocataire, notificationController.getPreferences);
+routerNotification.patch('/preferences', authBailleurLocataire, validate(z.object(preferenceFields).strict()), notificationController.setPreferences);
 
 /**
  * Créer une notification.
@@ -23,6 +43,7 @@ const routerNotification = express.Router();
 routerNotification.post(
   "/",
   authBailleurLocataireAdmin,
+  (req, res, next) => req.role === "admin" ? next() : res.status(403).json({ success: false }),
   validate(createNotificationSchema),
   notificationController.createNotification
 );

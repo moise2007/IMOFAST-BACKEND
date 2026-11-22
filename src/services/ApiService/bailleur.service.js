@@ -17,7 +17,7 @@ const getDataBailleur = async (user) => {
 
     if (!bailleurId) {
         throw new Error(
-            "Impossible d'identifier le bailleur."
+            "errors:backend.invalidInput"
         );
     }
 
@@ -27,7 +27,7 @@ const getDataBailleur = async (user) => {
 
     if (!bailleur) {
         throw new Error(
-            "Bailleur introuvable."
+            "errors:backend.notFound"
         );
     }
 
@@ -43,19 +43,7 @@ const getDataBailleur = async (user) => {
  * @returns {Promise<Object>}
  */
 const getDataAccueilBailleur = async (user) => {
-    const bailleurId = user.id || user.userId;
-
-    const bailleur = await bailleurRepository.findById(
-        bailleurId
-    );
-
-    if (!bailleur) {
-        throw new Error(
-            "Bailleur introuvable."
-        );
-    }
-
-    return bailleur;
+    return require("./ownerHome.service").load(user);
 };
 
 /**
@@ -72,7 +60,7 @@ const getProfilBailleur = async (idPublic) => {
 
     if (!bailleur) {
         throw new Error(
-            "Bailleur introuvable."
+            "errors:backend.notFound"
         );
     }
 
@@ -98,9 +86,10 @@ const updateDataBailleur = async (user, data) => {
     );
 
     if (!bailleur) {
-        throw new AppError( "Bailleur introuvable.", 404);
+        throw new AppError( "errors:backend.notFound", 404);
     }
 
+    if (data.nomAgence !== undefined) require("../../utils/agencyName").assertAgencyName(data.nomAgence);
     const updateData = {};
 
     const allowedFields = [
@@ -184,7 +173,7 @@ const deleteBailleur = async (user, data = {}) => {
 
     if (!bailleur) {
         throw new Error(
-            "Bailleur introuvable."
+            "errors:backend.notFound"
         );
     }
 
@@ -195,13 +184,13 @@ const deleteBailleur = async (user, data = {}) => {
     if (!isGoogleAccount) {
         if (!data.password) {
             throw new Error(
-                "Le mot de passe est obligatoire."
+                "errors:backend.passwordRequired"
             );
         }
 
         if (!bailleur.password) {
             throw new Error(
-                "Impossible de vérifier le mot de passe."
+                "errors:backend.invalidInput"
             );
         }
 
@@ -212,7 +201,7 @@ const deleteBailleur = async (user, data = {}) => {
 
         if (!passwordValid) {
             throw new Error(
-                "Mot de passe incorrect."
+                "errors:backend.passwordIncorrect"
             );
         }
     }

@@ -47,6 +47,7 @@ const validateUpdateLocataire = (body = {}) => {
         dateNaissance,
         localisation,
         photoProfil,
+        notificationsActivees,
     } = body;
 
     if (
@@ -107,6 +108,10 @@ const validateUpdateLocataire = (body = {}) => {
         throw new Error(
             "La profession est invalide."
         );
+    }
+
+    if (notificationsActivees !== undefined && typeof notificationsActivees !== "boolean") {
+        throw new Error("Le choix des notifications est invalide.");
     }
 
     return true;

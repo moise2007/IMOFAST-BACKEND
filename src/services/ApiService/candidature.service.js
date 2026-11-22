@@ -1,9 +1,13 @@
+const { candidatureActions } = require('../../utils/candidatureActions');
+const AppError = require('../../errors/AppError');
+const { calculerNoteCandidature, appointmentDate } = require('../../utils/candidatureScore');
 const { createId } = require("@paralleldrive/cuid2");
 
 const candidatureRepository = require("../../repositories/candidature.repository");
 const { Candidature } = require("../../models/candidature");
 const { susprendreCompte } = require("../suspensionCompte");
 const { createNotification } = require("../notification.service");
+const { findByPublicId } = require('../../repositories/locataire.repository');
 
 /**
  * Vérifie si le type de forfait est connu.
@@ -37,13 +41,9 @@ function hasActiveForfait(user) {
     return false;
   }
 
-  const fin = user?.forfait?.fin?._seconds;
-
-  if (!fin) {
-    return false;
-  }
-
-  return Date.now() <= fin * 1000;
+  const value = user?.forfait?.fin;
+  const fin = value?.toMillis?.() ?? ((value?.seconds ?? value?._seconds) != null ? (value.seconds ?? value._seconds) * 1000 : +new Date(value));
+  return Number.isFinite(fin) && Date.now() < fin;
 }
 
 /**
@@ -72,7 +72,7 @@ async function createCandidature({
     );
 
     const error = new Error(
-      "Votre compte a été suspendu pour 7 jours car nous avons repéré une activité inhabituelle."
+      "errors:backend.suspended"
     );
 
     error.statusCode = 203;
@@ -85,7 +85,7 @@ async function createCandidature({
       data.annonceId
     );
 
-  if (!annonce) {
+  if (!annonce || annonce.status !== "publier" || annonce.estPubliee === false) {
     const error = new Error(
       t("not_found", {
         ns: "errors",
@@ -98,22 +98,6 @@ async function createCandidature({
 
   const locataireId = user.idPublic;
   const bailleurId = annonce.bailleurId;
-
-  const candidatureExistante =
-    await candidatureRepository.findPendingByAnnonceAndLocataire({
-      annonceId: data.annonceId,
-      locataireId,
-    });
-
-  if (candidatureExistante) {
-    await candidatureRepository.updateByDocumentId(
-      candidatureExistante.documentId,
-      {
-        updatedAt: new Date(),
-        statut: "annuler",
-      }
-    );
-  }
 
   const forfaitActif = hasActiveForfait(user);
 
@@ -132,15 +116,19 @@ async function createCandidature({
     return {
       candidature: null,
       forfait: true,
-      msg: "Veuillez souscrire à un forfait pour pouvoir faire des candidatures.",
+      msg: t("errors:backend.quota"),
     };
   }
 
   const idPublic = createId();
+  const bien = await candidatureRepository.findBienByPublicId(annonce.bienId);
+  if (data.type === 'visite' && (!appointmentDate(data.visite) || +appointmentDate(data.visite) <= Date.now()))
+    throw new AppError('errors:backend.futureAppointment', 400);
 
   const candidature =
     new Candidature({
       idPublic,
+      note: calculerNoteCandidature(user, annonce, bien || {}),
       bailleurId,
       locataireId,
       type: data.type,
@@ -150,20 +138,22 @@ async function createCandidature({
       annonceId: data.annonceId,
     }).toFirebase();
 
-  await candidatureRepository.create(candidature);
+  await candidatureRepository.createAtomic(candidature, { userId: user.id });
 
-  await candidatureRepository.incrementAnnonceCandidatures(
-    data.annonceId
-  );
+  const dataR = {...candidature, locataire : await findByPublicId(locataireId)}
 
-  if (!forfaitActif) {
-    await candidatureRepository.decrementLocataireCandidatures(
-      user.id
-    );
-  }
+  await createNotification({
+    destinataireId: bailleurId,
+    typeDestinataire: "bailleur",
+    type: "candidature",
+    cibleId: idPublic,
+    typeCible: "candidature",
+    titreKey: data.type === 'visite' ? 'backend.push.visitTitle' : 'backend.push.applicationTitle',
+    messageKey: 'backend.push.applicationBody', values: { titre: annonce.titre },
+  });
 
   return {
-    candidature,
+    candidature: dataR,
     forfait: false,
   };
 }
@@ -177,6 +167,8 @@ async function createCandidature({
 async function acceptCandidature({
   idPublic,
   bailleurId,
+  user,
+  t,
 }) {
   const candidature =
     await candidatureRepository.findPendingByIdAndBailleur({
@@ -186,7 +178,7 @@ async function acceptCandidature({
 
   if (!candidature) {
     const error = new Error(
-      "Candidature introuvable."
+      "errors:backend.notFound"
     );
 
     error.statusCode = 404;
@@ -198,13 +190,25 @@ async function acceptCandidature({
       ? "dossierRetenu"
       : "visitePrevue";
 
-  return candidatureRepository.updateByDocumentId(
+  const updated = await candidatureRepository.updateByDocumentId(
     candidature.documentId,
     {
       updatedAt: new Date(),
       statut,
     }
   );
+
+  updated.locataire = await findByPublicId(updated.locataireId)
+  await createNotification({
+    destinataireId: candidature.locataireId,
+    typeDestinataire: "locataire",
+    type: "candidature",
+    cibleId: idPublic,
+    typeCible: "candidature",
+    titreKey: "notification.application_accepted.title",
+    messageKey: "notification.application_accepted.message", values: { user: [user?.prenom, user?.nom].filter(Boolean).join(" ") },
+  });
+  return updated;
 }
 
 /**
@@ -216,6 +220,8 @@ async function acceptCandidature({
 async function refuseCandidature({
   idPublic,
   bailleurId,
+  user,
+  t,
 }) {
   const candidature =
     await candidatureRepository.findPendingByIdAndBailleur({
@@ -225,20 +231,32 @@ async function refuseCandidature({
 
   if (!candidature) {
     const error = new Error(
-      "Candidature introuvable."
+      "errors:backend.notFound"
     );
 
     error.statusCode = 404;
     throw error;
   }
 
-  return candidatureRepository.updateByDocumentId(
+  const updated = await candidatureRepository.updateByDocumentId(
     candidature.documentId,
     {
       updatedAt: new Date(),
       statut: "refuser",
     }
   );
+
+  updated.locataire = await findByPublicId(updated.locataireId)
+  await createNotification({
+    destinataireId: candidature.locataireId,
+    typeDestinataire: "locataire",
+    type: "candidature",
+    cibleId: idPublic,
+    typeCible: "candidature",
+    titreKey: "notification.application_rejected.title",
+    messageKey: "notification.application_rejected.message", values: { user: [user?.prenom, user?.nom].filter(Boolean).join(" ") },
+  });
+  return updated;
 }
 
 /**
@@ -250,6 +268,8 @@ async function refuseCandidature({
 async function cancelCandidature({
   idPublic,
   userId,
+  user,
+  t,
 }) {
   const candidature =
     await candidatureRepository.findActiveByIdAndUser({
@@ -259,20 +279,36 @@ async function cancelCandidature({
 
   if (!candidature) {
     const error = new Error(
-      "Candidature introuvable."
+      "errors:backend.notFound"
     );
 
     error.statusCode = 404;
     throw error;
   }
 
-  return candidatureRepository.updateByDocumentId(
+  const updated = await candidatureRepository.updateByDocumentId(
     candidature.documentId,
     {
       updatedAt: new Date(),
       statut: "annuler",
     }
   );
+
+  updated.locataire = await findByPublicId(updated.locataireId)
+  const isCandidate = candidature.locataireId === userId;
+  const cancellationKey = isCandidate
+    ? "notification.application_cancelled_by_candidate"
+    : "notification.application_cancelled_by_owner";
+  await createNotification({
+    destinataireId: isCandidate ? candidature.bailleurId : candidature.locataireId,
+    typeDestinataire: isCandidate ? "bailleur" : "locataire",
+    type: "candidature",
+    cibleId: idPublic,
+    typeCible: "candidature",
+    titreKey: `${cancellationKey}.title`,
+    messageKey: `${cancellationKey}.message`, values: { user: [user?.prenom, user?.nom].filter(Boolean).join(" ") },
+  });
+  return updated;
 }
 
 /**
@@ -286,6 +322,7 @@ async function programmerCandidature({
   bailleurId,
   date,
   time,
+  t,
 }) {
   const candidature =
     await candidatureRepository.findVisiteByIdAndBailleur({
@@ -295,22 +332,38 @@ async function programmerCandidature({
 
   if (!candidature) {
     const error = new Error(
-      "Candidature introuvable."
+      "errors:backend.notFound"
     );
 
     error.statusCode = 404;
     throw error;
   }
 
-  return candidatureRepository.updateByDocumentId(
+  if (!appointmentDate({ dateSouhaitee: date, heureSouhaitee: time }) ||
+      +appointmentDate({ dateSouhaitee: date, heureSouhaitee: time }) <= Date.now())
+    throw new AppError('errors:backend.futureAppointment', 400);
+  const updated = await candidatureRepository.updateByDocumentId(
     candidature.documentId,
     {
       updatedAt: new Date(),
+      honoree: { bailleur: null, locataire: null },
       statut: "visitePrevue",
       "visite.dateSouhaitee": date,
       "visite.heureSouhaitee": time,
     }
   );
+
+  updated.locataire = await findByPublicId(updated.locataireId)
+  await createNotification({
+    destinataireId: candidature.locataireId,
+    typeDestinataire: "locataire",
+    type: "candidature",
+    cibleId: idPublic,
+    typeCible: "candidature",
+    titreKey: "notification.visit_scheduled.title",
+    messageKey: "notification.visit_scheduled.message",
+  });
+  return updated;
 }
 
 /**
@@ -335,22 +388,24 @@ async function updateCandidature({
 
   if (!candidature) {
     const error = new Error(
-      "Candidature introuvable."
+      "errors:backend.notFound"
     );
 
     error.statusCode = 404;
     throw error;
   }
 
-  const updated =
-    await candidatureRepository.updateByDocumentId(
-      candidature.documentId,
-      {
-        updatedAt: new Date(),
-        demande: data.demande,
-        visite: data.visite,
-      }
-    );
+  const patch = { updatedAt: new Date() };
+  if (data.demande !== undefined) patch.demande = { ...candidature.demande, ...data.demande };
+  if (data.visite !== undefined) {
+    patch.visite = { ...candidature.visite, ...data.visite };
+    const date = require('../../utils/candidatureScore').appointmentDate(patch.visite);
+    if (!date || +date <= Date.now()) throw new AppError('errors:backend.futureAppointment', 400);
+  }
+  let updated = await candidatureRepository.updateByDocumentId(candidature.documentId, patch);
+
+  updated.locataire = await findByPublicId(locataireId)
+
 
   await createNotification({
     destinataireId:
@@ -367,20 +422,9 @@ async function updateCandidature({
     cibleId: idPublic,
     typeCible: "candidature",
 
-    message: t(
-      "notification.application_updated.message",
-      {
-        ns: "responses",
-        user: `${user?.prenom} ${user?.nom}`,
-      }
-    ),
-
-    titre: t(
-      "notification.application_updated.title",
-      {
-        ns: "responses",
-      }
-    ),
+    messageKey: 'notification.application_updated.message',
+    titreKey: 'notification.application_updated.title',
+    values: { user: [user?.prenom, user?.nom].filter(Boolean).join(' ') },
 
     lang: user?.language,
   });
@@ -406,7 +450,7 @@ async function deleteCandidature({
 
   if (!candidature) {
     const error = new Error(
-      "Candidature introuvable."
+      "errors:backend.notFound"
     );
 
     error.statusCode = 404;
@@ -440,10 +484,15 @@ async function getCandidature({
     });
 
   if (!candidature) {
-    const error = new Error( "Candidature introuvable." );
+    const error = new Error( "errors:backend.notFound" );
 
     error.statusCode = 404;
     throw error;
+  }
+
+  if (role === 'bailleur') {
+    await candidatureRepository.markRead({ idPublic, userId: user.idPublic });
+    candidature.vu = true;
   }
 
   const annonce =
@@ -460,8 +509,14 @@ async function getCandidature({
       );
   }
 
+  const locataire = await findByPublicId(candidature.locataireId)
+
   return {
     ...candidature,
+    actions: candidatureActions(candidature, role),
+    bailleur: await require("../../repositories/bailleur.repository").findByPublicId(candidature.bailleurId).then(owner => owner ? { idPublic: owner.idPublic, nom: owner.nom, prenom: owner.prenom, photoProfil: owner.photoProfil, telephone: owner.telephone, typeProfil: owner.typeProfil } : null),
+    bien,
+    locataire,
     annonce: annonce
       ? {
           ...annonce,
@@ -484,14 +539,36 @@ async function getCandidatures({
   user,
   role,
 }) {
-  return candidatureRepository.list({
+  const result = await candidatureRepository.list({
     filters,
     userId: user.idPublic,
     role,
   });
+  const relationRepository = require("../../repositories/favori.repository");
+  const annonces = await relationRepository.findAnnoncesByPublicIds(result.candidatures.map(c => c.annonceId).filter(Boolean));
+  const biens = await relationRepository.findBiensByPublicIds(annonces.map(a => a.bienId).filter(Boolean));
+  const byAnnonce = new Map(annonces.map(a => [a.idPublic, a]));
+  const byBien = new Map(biens.map(b => [b.idPublic, b]));
+  return { ...result, candidatures: await Promise.all(result.candidatures.map(async (c) => {
+    const annonce = byAnnonce.get(c.annonceId);
+    const locataire = await findByPublicId(c.locataireId)
+    return { ...c, locataire, annonce: annonce ?? { existe: false }, bien: byBien.get(annonce?.bienId) ?? null };
+  })) };
 }
 
+async function markRead({ idPublic, user }) {
+  return candidatureRepository.markRead({ idPublic, userId: user.idPublic });
+}
+async function setAttendance({ idPublic, user, role, data }) {
+  return candidatureRepository.setAttendance({ idPublic, userId: user.idPublic, role, ...data });
+}
+async function getCandidateProfile({ idPublic, user }) {
+  const candidature = await candidatureRepository.findByIdAndUser({ idPublic, userId: user.idPublic });
+  if (!candidature || candidature.bailleurId !== user.idPublic) throw new AppError('errors:backend.notFound', 404);
+  return candidatureRepository.candidateProfile(candidature.locataireId);
+}
 module.exports = {
+  markRead, setAttendance, getCandidateProfile,
   createCandidature,
   acceptCandidature,
   refuseCandidature,

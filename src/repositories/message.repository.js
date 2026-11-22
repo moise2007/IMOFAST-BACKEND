@@ -149,15 +149,25 @@ class MessageRepository {
    * @param {Object} data
    * @returns {Promise<{id: string, data: Object}>}
    */
-  async create(data) {
-    const reference = await db
-      .collection(MESSAGE_COLLECTION)
-      .add(data);
-
-    return {
-      id: reference.id,
-      data,
-    };
+  async create(data, context = {}) {
+    const { authorRef, increment } = require('./activite.repository');
+    const reference = db.collection(MESSAGE_COLLECTION).doc(data.idPublic);
+    return db.runTransaction(async tx => {
+      const current = await tx.get(reference);
+      if (current.exists) return { id: reference.id, data: current.data(), created: false };
+      const author = await authorRef(context.role, data.auteurId, tx);
+      tx.create(reference, data);
+      increment(tx, author, 'messagesEnvoyes');
+      if (context.conversationDocumentId) {
+        const recipient = context.conversation.idParticipants.find(id => id !== data.auteurId);
+        tx.update(db.collection(CONVERSATION_COLLECTION).doc(context.conversationDocumentId), {
+          dernierMessage: { contenu: data.contenu, type: data.type, idAuteur: data.auteurId, createdAt: data.createdAt },
+          updatedAt: data.createdAt,
+          ...(recipient ? { [`nonLus.${recipient}`]: admin.firestore.FieldValue.increment(1) } : {}),
+        });
+      }
+      return { id: reference.id, data, created: true };
+    });
   }
 
   /**
@@ -196,7 +206,7 @@ class MessageRepository {
    * @param {Array<{reference: Object, data: Object}>} messages
    * @param {string} auteurId
    * @param {string[]} participants
-   * @returns {Promise<void>}
+   * @returns {Promise<string[]>} Identifiants publics des messages passés à « lu ».
    */
   async markMessagesAsRead(
     messages,
@@ -205,7 +215,7 @@ class MessageRepository {
   ) {
     const batch = db.batch();
 
-    let hasUpdates = false;
+    const readMessageIds = [];
 
     for (const message of messages) {
       const data = message.data;
@@ -220,13 +230,14 @@ class MessageRepository {
           lu: true,
         });
 
-        hasUpdates = true;
+        readMessageIds.push(data.idPublic);
       }
     }
 
-    if (hasUpdates) {
+    if (readMessageIds.length) {
       await batch.commit();
     }
+    return readMessageIds;
   }
 }
 

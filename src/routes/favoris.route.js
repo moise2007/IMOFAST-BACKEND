@@ -13,6 +13,13 @@ const {
 
 const routerFavoris = express.Router();
 
+const { asyncHandler } = require("../utils/asyncHandler");
+const favoriRepository = require("../repositories/favori.repository");
+routerFavoris.get("/annonce/:id", authLocataire, validate(annonceIdSchema, "params"), asyncHandler(async (req, res) => {
+  const favori = await favoriRepository.findByAnnonceAndLocataire({ annonceId: req.validatedParams.id, locataireId: req.user.idPublic });
+  res.json({ success: true, favori: favori?.data ?? null });
+}));
+
 /**
  * Récupère les favoris du locataire.
  *

@@ -67,7 +67,7 @@ const createBien = async ({
 
   const cleanData = formaterObjet(data);
 
-  
+
   let bien = null
   if(cleanData.typeBien == 'bureau'){
     bien = new Bureau({
@@ -123,7 +123,7 @@ const createBien = async ({
  * @returns {Promise<Object>}
  */
 const getBien = async ({
-  id,
+  id, user, role,
 }) => {
   const result = await bienRepository.findByPublicId(id);
 
@@ -131,7 +131,7 @@ const getBien = async ({
     createBusinessError( "Le bien n'existe pas",404);
   }
 
-  return result.bien;
+  return { ...result.bien, ...(role === "bailleur" && result.bien.bailleurId === user?.idPublic ? { annonces: await require("../../repositories/annonce.repository").findByBien(id) } : {}) };
 };
 
 /**
@@ -277,7 +277,7 @@ const updateBien = async ({
     );
   }
 
-  return result.bien;
+  return { ...result.bien, ...(role === "bailleur" && result.bien.bailleurId === user?.idPublic ? { annonces: await require("../../repositories/annonce.repository").findByBien(id) } : {}) };
 };
 
 /**

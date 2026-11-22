@@ -1,6 +1,10 @@
 const { db } = require("../config/firebase");
 
 class ServiceClientRepository {
+    async getContacts() {
+        const doc = await db.collection('parametres').doc('service_client').get();
+        return doc.exists ? doc.data() : {};
+    }
     /**
      * Crée un document dans une collection.
      *

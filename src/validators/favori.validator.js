@@ -24,6 +24,12 @@ const favoriIdSchema = z.object({
  * Valide les paramètres de récupération des favoris.
  */
 const getFavorisSchema = z.object({
+  cursor: z.string().max(1000).refine(value => {
+    try {
+      const data = JSON.parse(Buffer.from(value, "base64url").toString());
+      return Array.isArray(data) && data.length === 3 && Number.isInteger(data[0]) && data[0] >= 0 && Number.isInteger(data[1]) && data[1] >= 0 && data[1] < 1e9 && typeof data[2] === "string" && data[2].length > 0 && !data[2].includes("/");
+    } catch { return false; }
+  }, "Invalid cursor").optional(),
   page: z.coerce
     .number()
     .int()

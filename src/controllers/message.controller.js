@@ -8,8 +8,10 @@ const messageService = require("../services/ApiService/message.service");
  */
 const sendMessage = asyncHandler(async (req, res) => {
   const message = await messageService.sendMessage({
-    ...req.validatedBody,
+    conversationId: req.validatedBody.conversationId,
     auteurId: req.user.idPublic,
+    auteur: req.user,
+    data: req.validatedBody,
   });
 
   return res.status(200).json({
@@ -36,9 +38,18 @@ const getMessages = asyncHandler(async (req, res) => {
     lastId,
   });
 
+  const { readMessageIds, otherUserId, ...publicResult } = result;
+  if (readMessageIds?.length && otherUserId) {
+    req.app.get("io")?.to(otherUserId).emit("messagesRead", {
+      conversationId: id,
+      readBy: req.user.idPublic,
+      readAt: Date.now(),
+    });
+  }
+
   return res.status(200).json({
     success: true,
-    ...result,
+    ...publicResult,
     msg: req.t("success.message_created", {
       ns: "responses",
     }),

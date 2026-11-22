@@ -1,3 +1,8 @@
+const { annoncePresentation } = require("../../utils/annoncePresentation");
+const publicOwner = owner => owner ? Object.fromEntries(
+  ['idPublic', 'nom', 'prenom', 'nomAgence', 'photoProfil', 'avatar', 'photo', 'type', 'note', 'notes', 'verification', 'createdAt']
+    .filter(key => owner[key] !== undefined).map(key => [key, owner[key]])
+) : null;
 const { createId } = require("@paralleldrive/cuid2");
 
 const AppError = require("../../errors/AppError");
@@ -8,6 +13,26 @@ const { createMetaDataAnnonce } = require("../../utils/createMetaDataAnnonce");
 const { Annonce } = require("../../models/annonce");
 const { getBiens, getBien } = require("./bien.service");
 const { findByPublicId } = require("../../repositories/bailleur.repository");
+const { notifyTenantsForListing } = require("../../notifications/alertDelivery");
+
+const withViewStats = (annonce) => {
+  const vues = {
+    simple: annonce.vues?.simple ?? 0,
+    profonde: annonce.vues?.profonde ?? 0,
+  };
+
+  return {
+    ...annonce,
+    vues,
+    statistiques: {
+      ...annonce.statistiques,
+      vues: Math.max(
+        Number(annonce.statistiques?.vues) || 0,
+        Number(vues.profonde) || 0,
+      ),
+    },
+  };
+};
 
 /**
  * Crée une nouvelle annonce pour un bailleur.
@@ -28,7 +53,7 @@ const { findByPublicId } = require("../../repositories/bailleur.repository");
 exports.createAnnonce = async ({ data, user, role }) => {
 
   if (role !== "bailleur") {
-    throw new AppError("accès refusé", 403);
+    throw new AppError("errors:backend.forbidden", 403);
   }
   console.log(data)
 
@@ -44,7 +69,7 @@ exports.createAnnonce = async ({ data, user, role }) => {
   );
 
   if (!bien) {
-    throw new AppError( "vous ne pouvez pas créer une annonce pour ce bien", 403);
+    throw new AppError( "errors:backend.forbidden", 403);
   }
 
   /**
@@ -57,7 +82,7 @@ exports.createAnnonce = async ({ data, user, role }) => {
 
   if (nombreAnnonces >= 2) {
     throw new AppError(
-      "ce bien possède déjà le nombre maximum d'annonces autorisé",
+      "errors:backend.forbidden",
       409
     );
   }
@@ -80,7 +105,9 @@ exports.createAnnonce = async ({ data, user, role }) => {
     }),
   }).toFirebase();
 
-  return annonceRepository.create(annonce);
+  const created = await annonceRepository.create(annonce);
+  // The publication job delivers the durable notification flag, including after a restart.
+  return created;
 };
 
 /**
@@ -98,6 +125,8 @@ exports.getAnnonces = async ({ filters, user, role }) => {
   const { page, limit, ...criteres } = filters;
 
   const criteresFinaux = { ...criteres };
+  if (criteresFinaux.nature === "meuble") criteresFinaux.nature = "meubler";
+  if (criteresFinaux.status) criteresFinaux.status = require("../../utils/publication").normalizeStatus(criteresFinaux.status);
 
   if (role === "bailleur") {
     criteresFinaux.bailleurId = user.idPublic;
@@ -106,26 +135,14 @@ exports.getAnnonces = async ({ filters, user, role }) => {
   /**
    * Récupération des annonces et du nombre total en parallèle.
    */
-  const [annonces, totalItems] = await Promise.all([
-    annonceRepository.findMany({
-      criteres: criteresFinaux,
-      page,
-      limit,
-      role,
-      user,
-    }),
-
-    annonceRepository.countMany({
-      criteres: criteresFinaux,
-      role,
-      user,
-    }),
-  ]);
+  if (role !== "bailleur" && role !== "admin") criteresFinaux.status = "publier";
+  const { annonces, totalItems } = await annonceRepository.findPage({ criteres: criteresFinaux, page, limit });
 
   /**
    * Enrichissement des annonces.
    */
 
+  const favoris = role === "locataire" ? await annonceRepository.favorisForAnnonces(annonces.map(a => a.idPublic), user.idPublic) : new Map();
   let annoncesEnrichies = [...(annonces ?? [])]
   annoncesEnrichies = await Promise.all(
     annonces.map(async (annonce) => {
@@ -135,21 +152,20 @@ exports.getAnnonces = async ({ filters, user, role }) => {
       ]);
 
       return {
-        ...annonce,
+        ...withViewStats(annonce),
         bien,
-        bailleur: bailleur ?? null,
+        bailleur: role === 'bailleur' || role === 'admin' ? bailleur ?? null : publicOwner(bailleur),
+        favoris: favoris.get(annonce.idPublic) ?? false,
       };
     })
   );
-  
-   
+
+
 
   /**
    * Pagination.
    */
   const totalPages = Math.ceil(totalItems / limit);
-
-  console.log(annoncesEnrichies)
 
   return {
     annonces: annoncesEnrichies,
@@ -177,8 +193,9 @@ exports.getAnnonces = async ({ filters, user, role }) => {
 exports.getAnnonce = async ({ id, user, role }) => {
   const annonce = await annonceRepository.findByIdPublic(id);
 
+
   if (!annonce) {
-    throw new AppError("annonce introuvable", 404);
+    throw new AppError("errors:backend.notFound", 404);
   }
 
   /**
@@ -186,7 +203,7 @@ exports.getAnnonce = async ({ id, user, role }) => {
    * lorsqu'il consulte son espace de gestion.
    */
   if (role === "bailleur" && annonce.bailleurId !== user.idPublic) {
-    throw new AppError("annonce introuvable", 404);
+    throw new AppError("errors:backend.notFound", 404);
   }
 
   /**
@@ -195,10 +212,12 @@ exports.getAnnonce = async ({ id, user, role }) => {
    * - bailleur ;
    * - favori éventuel pour un locataire.
    */
+  if (!['bailleur', 'admin'].includes(role) && (annonce.status !== 'publier' || annonce.estPubliee === false || (annonce.dateExpiration && +new Date(annonce.dateExpiration) <= Date.now())))
+    throw new AppError('errors:backend.notFound', 404);
   const bien = await annonceRepository.findBienById(annonce.bienId);
 
   if (!bien) {
-    throw new AppError("bien associé à l'annonce introuvable", 404);
+    throw new AppError("errors:backend.notFound", 404);
   }
 
   let bailleur = null;
@@ -218,9 +237,10 @@ exports.getAnnonce = async ({ id, user, role }) => {
   }
 
   return {
-    ...annonce,
+    ...withViewStats(annonce),
+    presentation: annoncePresentation(annonce, bailleur),
     bien,
-    bailleur,
+    bailleur: role === 'admin' ? bailleur : { ...publicOwner(bailleur), ...(role === 'locataire' && bailleur?.telephone ? { telephone: bailleur.telephone } : {}) },
     favoris,
   };
 };
@@ -242,17 +262,17 @@ exports.getAnnonce = async ({ id, user, role }) => {
  */
 exports.updateAnnonce = async ({ id, data, user, role }) => {
   if (role !== "bailleur") {
-    throw new AppError("accès refusé", 403);
+    throw new AppError("errors:backend.forbidden", 403);
   }
 
   const annonce = await annonceRepository.findByIdPublic(id);
 
   if (!annonce) {
-    throw new AppError("annonce introuvable", 404);
+    throw new AppError("errors:backend.notFound", 404);
   }
 
   if (annonce.bailleurId !== user.idPublic) {
-    throw new AppError("annonce introuvable", 404);
+    throw new AppError("errors:backend.notFound", 404);
   }
 
   /**
@@ -267,7 +287,11 @@ exports.updateAnnonce = async ({ id, data, user, role }) => {
 
   const donneesNettoyees = formaterObjet(donnees);
 
-  return annonceRepository.update(id, donneesNettoyees);
+  const publication = require('../../utils/publication').publicationFields(donnees, annonce);
+  const updated = await annonceRepository.update(id, { ...donneesNettoyees, ...publication,
+    ...(publication.status === 'publier' && annonce.status !== 'publier' ? { publicationNotificationPending: true } : {}) });
+  if (updated.status !== 'publier') require('./selection-annonce.service').removeFromSelections(id);
+  return updated;
 };
 
 /**
@@ -284,14 +308,15 @@ exports.updateAnnonce = async ({ id, data, user, role }) => {
  */
 exports.deleteAnnonce = async ({ id, user, role }) => {
   if (role !== "bailleur") {
-    throw new AppError("accès refusé", 403);
+    throw new AppError("errors:backend.forbidden", 403);
   }
 
   const annonce = await annonceRepository.findByIdPublic(id);
 
   if (!annonce || annonce.bailleurId !== user.idPublic) {
-    throw new AppError("annonce introuvable", 404);
+    throw new AppError("errors:backend.notFound", 404);
   }
 
   await annonceRepository.remove(id);
+  require("./selection-annonce.service").removeFromSelections(id);
 };

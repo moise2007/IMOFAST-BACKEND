@@ -161,15 +161,18 @@ class ConversationRepository {
    * @param {Object} data
    * @returns {Promise<Object>}
    */
-  async create(data) {
-    const reference = await db
-      .collection(CONVERSATION_COLLECTION)
-      .add(data);
-
-    return {
-      id: reference.id,
-      data,
-    };
+  async create(data, { role, userId } = {}) {
+    const { authorRef, increment } = require('./activite.repository');
+    const key = require('node:crypto').createHash('sha256').update(`${data.bailleurId}:${data.locataireId}`).digest('hex');
+    const reference = db.collection(CONVERSATION_COLLECTION).doc(key);
+    return db.runTransaction(async tx => {
+      const current = await tx.get(reference);
+      if (current.exists) return { id: reference.id, data: current.data() };
+      const author = await authorRef(role, userId, tx);
+      tx.create(reference, data);
+      increment(tx, author, 'conversationsCreees');
+      return { id: reference.id, data };
+    });
   }
 
   /**

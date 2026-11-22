@@ -1,126 +1,90 @@
 const { z } = require("zod");
 
-const TYPES_CIBLE = [
-  "profil",
-  "bailleur",
-  "locataire",
-  "bien",
-  "annonce",
-];
+const TYPES_CIBLE = ["annonce", "locataire", "bailleur"];
 
-/**
- * Validation d'une valeur de note.
- */
 const valeurSchema = z
   .coerce
   .number()
+  .int("La note doit être un entier")
+  .min(1, "La note minimale est 1")
+  .max(5, "La note maximale est 5");
+
+const valeurOuSuppressionSchema = z
+  .coerce
+  .number()
+  .int("La note doit être un entier")
   .min(0, "La note minimale est 0")
   .max(5, "La note maximale est 5");
 
+const typeCibleSchema = z.enum(TYPES_CIBLE, {
+  errorMap: () => ({ message: "Le type de cible est invalide" }),
+});
+
 /**
- * Validation lors de la création d'une note.
+ * POST /notes  → voter (créer ou modifier, ou supprimer si valeur = 0)
+ */
+const voterSchema = z.object({
+  cibleId: z.string().trim().min(1, "La cible est requise"),
+  typeCible: typeCibleSchema,
+  valeur: valeurOuSuppressionSchema,
+});
+
+/**
+ * Variante stricte si tu veux interdire la suppression via POST.
  */
 const createNoteSchema = z.object({
-  cibleId: z
-    .string()
-    .trim()
-    .min(1, "La cible est requise"),
-
-  typeCible: z.enum(TYPES_CIBLE, {
-    errorMap: () => ({
-      message: "Le type de cible est invalide",
-    }),
-  }),
-
+  cibleId: z.string().trim().min(1, "La cible est requise"),
+  typeCible: typeCibleSchema,
   valeur: valeurSchema,
 });
 
 /**
- * Validation lors de la modification d'une note.
+ * PATCH /notes/:id
  */
 const updateNoteSchema = z.object({
   valeur: valeurSchema,
 });
 
 /**
- * Validation de l'identifiant public d'une note.
+ * GET /notes/:id
  */
 const noteIdSchema = z.object({
-  id: z
-    .string()
-    .trim()
-    .min(1, "L'identifiant de la note est requis"),
+  id: z.string().trim().min(1, "L'identifiant de la note est requis"),
 });
 
 /**
- * Validation des filtres de recherche.
- *
- * Exemples :
- * GET /notes?typeCible=bien
- * GET /notes?cibleId=bien123
- * GET /notes?min=3&max=5
- * GET /notes?auteurId=user123
+ * GET /notes/ma-note?cibleId=...&typeCible=...
+ */
+const maNoteQuerySchema = z.object({
+  cibleId: z.string().trim().min(1, "cibleId est requis"),
+  typeCible: typeCibleSchema,
+});
+
+/**
+ * GET /notes/agregat?cibleId=...&typeCible=...
+ */
+const agregatQuerySchema = z.object({
+  cibleId: z.string().trim().min(1, "cibleId est requis"),
+  typeCible: typeCibleSchema,
+});
+
+/**
+ * GET /notes
  */
 const getNotesSchema = z.object({
-  cibleId: z
-    .string()
-    .trim()
-    .min(1)
-    .optional(),
-
-  typeCible: z
-    .enum(TYPES_CIBLE, {
-      errorMap: () => ({
-        message: "Le type de cible est invalide",
-      }),
-    })
-    .optional(),
-
-  auteurId: z
-    .string()
-    .trim()
-    .min(1)
-    .optional(),
-
+  cibleId: z.string().trim().min(1).optional(),
+  typeCible: typeCibleSchema.optional(),
+  auteurId: z.string().trim().min(1).optional(),
   valeur: valeurSchema.optional(),
-
-  min: z
-    .coerce
-    .number()
-    .min(0)
-    .max(5)
-    .optional(),
-
-  max: z
-    .coerce
-    .number()
-    .min(0)
-    .max(5)
-    .optional(),
-
-  pageSize: z
-    .coerce
-    .number()
-    .int()
-    .positive()
-    .max(100)
-    .default(30),
-
-  lastId: z
-    .string()
-    .trim()
-    .min(1)
-    .optional(),
-})
-.refine(
+  min: z.coerce.number().min(1).max(5).optional(),
+  max: z.coerce.number().min(1).max(5).optional(),
+  pageSize: z.coerce.number().int().positive().max(100).default(30),
+  lastId: z.string().trim().min(1).optional(),
+}).refine(
   (data) => {
-    if (
-      data.min !== undefined &&
-      data.max !== undefined
-    ) {
+    if (data.min !== undefined && data.max !== undefined) {
       return data.min <= data.max;
     }
-
     return true;
   },
   {
@@ -131,10 +95,6 @@ const getNotesSchema = z.object({
 
 /**
  * Middleware générique de validation Zod.
- *
- * @param {import("zod").ZodSchema} schema
- * @param {"body"|"params"|"query"} source
- * @returns {import("express").RequestHandler}
  */
 const validate = (schema, source = "body") => {
   return (req, res, next) => {
@@ -151,11 +111,9 @@ const validate = (schema, source = "body") => {
       case "params":
         req.validatedParams = result.data;
         break;
-
       case "query":
         req.validatedQuery = result.data;
         break;
-
       default:
         req.validatedBody = result.data;
     }
@@ -166,9 +124,12 @@ const validate = (schema, source = "body") => {
 
 module.exports = {
   TYPES_CIBLE,
+  voterSchema,
   createNoteSchema,
   updateNoteSchema,
   noteIdSchema,
+  maNoteQuerySchema,
+  agregatQuerySchema,
   getNotesSchema,
   validate,
 };

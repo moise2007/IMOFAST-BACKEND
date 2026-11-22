@@ -1,5 +1,6 @@
 const {createId} = require("@paralleldrive/cuid2")
 const { admin } = require("../config/firebase")
+const { emptyNotes } = require("../utils/notesDistribution")
 const { calculerCompletudeBailleur } = require("../utils/completudeProfil/completudeProfil.bailleur.utils")
 const timestamp = admin.firestore.Timestamp
 class Bailleur{
@@ -24,7 +25,8 @@ class Bailleur{
         imageAnciensContrats,
         completudeProfilPourcentage,
     }){
-        this.nom = nom 
+        require("../utils/agencyName").assertAgencyName(nomAgence)
+        this.nom = nom
         this.nomAgence = nomAgence ?? null
         this.typeProfil = typeProfil ?? "bailleur"
         this.prenom = prenom ?? null
@@ -49,6 +51,11 @@ class Bailleur{
     toDataBase(){
         return{
             role: "bailleur",
+      notification: { web: null, mobile: null },
+      notifications: [],
+      activiteInterne: { commentaires: 0, reponses: 0, notes: 0, conversationsCreees: 0, messagesEnvoyes: 0 },
+      notificationPreferences: { ...require("../utils/notificationPreferences").DEFAULT_NOTIFICATION_PREFERENCES },
+            onboarding: { etape: "bien", termine: false },
             nom: this.nom,
             prenom: this.prenom,
             nomAgence: this.nomAgence,
@@ -83,17 +90,18 @@ class Bailleur{
                 isCertified: false,
             },
 
-            
+
             score:{
                 global: 40,
                 badge: "bronze",
             },
+            notes: emptyNotes(),
             notation:{
                 moyenne: 0,
                 nombresAvis : 0,
                 completudeProfilPourcentage : this.completudeProfilPourcentage,
             },
-            
+
             signalements: {
                 total : 0,
                 historiques: [],

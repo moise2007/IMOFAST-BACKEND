@@ -243,6 +243,7 @@ const updateByPublicId = async ({
     ...data,
     updateAt,
   });
+  await require('./annonce-keywords.repository').reindexProperty(updated.idPublic);
 
   return {
     bien: updated,

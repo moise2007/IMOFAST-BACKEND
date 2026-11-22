@@ -9,8 +9,10 @@ class Candidature {
         message,
         visite,
         demande,
-        annonceId
+        annonceId,
+        note = 0,
     }) {
+        this.note = note
         this.idPublic   = idPublic
         this.bailleurId  = bailleurId
         this.locataireId = locataireId
@@ -23,19 +25,21 @@ class Candidature {
 
     toFirebase() {
         return {
-            //  Référence 
+            //  Référence
             idPublic:   this.idPublic,
             bailleurId:  this.bailleurId,
             locataireId: this.locataireId,
             annonceId: this.annonceId,
 
-            //  Type 
+            //  Type
             type: this.type, // "visite" | "demande"
 
-            //  Statut 
+            //  Statut
             statut: this.statut ?? "en_attente",
             // "en_attente" | "acceptee" | "refusee" | "annulee"
 
+            note: this.note,
+            honoree: { bailleur: null, locataire: null },
             vu:      this.vu      ?? false,
             message: this.message ?? "",
             delete: {
@@ -43,22 +47,22 @@ class Candidature {
                 [this.locataireId]: false
             },
 
-            //  Dates 
+            //  Dates
             createdAt: Timestamp.now(),
             updatedAt: Timestamp.now(),
 
-            //  Détails visite 
+            //  Détails visite
             ...(this.type === "visite" ? {
                 visite: {
                     dateSouhaitee:   this.visite?.dateSouhaitee  ?? null,
                     heureSouhaitee:  this.visite?.heureSouhaitee ?? null,
                     horaireFlexible: this.visite?.horaireFlexible ?? false,
                     fraisVisite:     this.visite?.fraisVisite     ?? 0,
-                    devise:    this.visite?.devise   ?? "XFA",
+                    devise:    this.visite?.devise   ?? "XAF",
                 }
             } : {}),
 
-            //  Détails demande 
+            //  Détails demande
             ...(this.type === "demande" ? {
                 demande: {
                     prix:   this.demande?.prix  ?? 0,

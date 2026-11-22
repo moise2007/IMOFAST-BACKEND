@@ -1,5 +1,8 @@
 const { createId } = require("@paralleldrive/cuid2");
 
+const {db} = require("../../config/firebase");
+const {notifyNewMessage} = require("../../notifications/push/messagePush");
+const {messageNotificationTitle} = require("../../notifications/messageTitle");
 const { Message } = require("../../models/message");
 const messageRepository = require("../../repositories/message.repository");
 
@@ -37,7 +40,7 @@ const getAuthorizedConversation = async ({
 
   if (!conversation) {
     const error = new Error(
-      "Conversation introuvable"
+      "errors:backend.notFound"
     );
 
     error.statusCode = 404;
@@ -53,7 +56,7 @@ const getAuthorizedConversation = async ({
     )
   ) {
     const error = new Error(
-      "Vous ne faites pas partie de cette conversation"
+      "errors:backend.forbidden"
     );
 
     error.statusCode = 403;
@@ -77,9 +80,11 @@ const getAuthorizedConversation = async ({
 const sendMessage = async ({
   conversationId,
   auteurId,
+  auteur,
+  messageId,
   data,
 }) => {
-  await getAuthorizedConversation({
+  const conversation = await getAuthorizedConversation({
     conversationId,
     userId: auteurId,
   });
@@ -100,7 +105,7 @@ const sendMessage = async ({
         conversationId
     ) {
       const error = new Error(
-        "Message auquel vous répondez introuvable"
+        "errors:backend.notFound"
       );
 
       error.statusCode = 404;
@@ -114,14 +119,35 @@ const sendMessage = async ({
     ...data,
     conversationId,
     auteurId,
-    idPublic: createId(),
+    idPublic: messageId || createId(),
   });
 
   const messageData = message.toFirebase();
 
   const createdMessage =
-    await messageRepository.create(messageData);
+    await messageRepository.create(messageData, {
+      role: auteurId === conversation.data.bailleurId ? 'bailleur' : 'locataire', auteurId,
+      conversationDocumentId: conversation.id, conversation: conversation.data,
+    });
 
+  if (createdMessage.created === false) return createdMessage.data;
+  const toOwner = auteurId === conversation.data.locataireId;
+  const recipientRole = toOwner ? "bailleur" : "locataire";
+  const recipientId = toOwner ? conversation.data.bailleurId : conversation.data.locataireId;
+  const notificationTitle = messageNotificationTitle(auteur);
+  void notifyNewMessage({db, conversationId, recipientRole, recipientId, title: notificationTitle, sender: auteur});
+  void Promise.resolve().then(() => require("../notification.service").createNotification({
+    destinataireId: recipientId,
+    typeDestinataire: recipientRole,
+    type: "message",
+    cibleId: conversationId,
+    typeCible: "conversation",
+    titreKey: 'backend.push.messageTitle',
+    message: typeof createdMessage.data?.contenu === "string" && createdMessage.data.contenu.trim()
+      ? createdMessage.data.contenu.slice(0, 160)
+      : undefined,
+    messageKey: 'backend.push.messageBody',
+  })).catch((error) => console.error("Notification du message :", error));
   return createdMessage.data;
 };
 
@@ -155,7 +181,7 @@ const getMessages = async ({
 
     if (!lastDocument) {
       const error = new Error(
-        "Curseur de pagination introuvable"
+        "errors:backend.notFound"
       );
 
       error.statusCode = 404;
@@ -175,17 +201,20 @@ const getMessages = async ({
   /**
    * Marquer comme lus les messages reçus.
    */
-  await messageRepository.markMessagesAsRead(
+  const readMessageIds = await messageRepository.markMessagesAsRead(
     messages,
     auteurId,
     conversation.data.idParticipants || []
   );
+  const newlyReadIds = new Set(readMessageIds);
 
   return {
     messages: messages.map(
-      ({ data }) => data
+      ({ data }) => newlyReadIds.has(data.idPublic) ? { ...data, lu: true } : data
     ),
     hasMore: messages.length === 30,
+    readMessageIds,
+    otherUserId: conversation.data.idParticipants?.find(id => id !== auteurId),
   };
 };
 
@@ -209,7 +238,7 @@ const deleteMessage = async ({
 
   if (!message) {
     const error = new Error(
-      "Message introuvable"
+      "errors:backend.notFound"
     );
 
     error.statusCode = 404;
@@ -255,7 +284,7 @@ const updateMessage = async ({
 
   if (!message) {
     const error = new Error(
-      "Message introuvable"
+      "errors:backend.notFound"
     );
 
     error.statusCode = 404;
@@ -277,7 +306,7 @@ const updateMessage = async ({
 
   if (now > expiredAt) {
     const error = new Error(
-      "Le délai de modification du message est dépassé"
+      "errors:backend.editExpired"
     );
 
     error.statusCode = 403;

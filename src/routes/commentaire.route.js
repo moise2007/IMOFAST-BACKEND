@@ -36,7 +36,6 @@ routerCommentaire.post(
  */
 routerCommentaire.get(
   "/:col/:id",
-  authBailleurLocataireAdmin,
   validate(getCommentairesParamsSchema, "params"),
   validate(getCommentairesSchema, "query"),
   commentaireController.getCommentaires

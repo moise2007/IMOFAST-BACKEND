@@ -20,6 +20,7 @@ const formaterObjet = (objet) => {
   return Object.fromEntries(
     Object.entries(objet)
       .map(([cle, valeur]) => {
+        if (valeur instanceof Date) return [cle, valeur.toISOString()];
         if (valeur && typeof valeur === "object" && !Array.isArray(valeur)) {
           const objetFormate = formaterObjet(valeur);
 

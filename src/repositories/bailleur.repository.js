@@ -118,6 +118,7 @@ const findByTelephone = async (telephone) => {
  * @returns {Promise<Object>}
  */
 const update = async (bailleurId, data) => {
+    if (data.nomAgence !== undefined) require("../utils/agencyName").assertAgencyName(data.nomAgence);
     const updateData = {
         ...data,
         updatedAt: FieldValue.serverTimestamp(),

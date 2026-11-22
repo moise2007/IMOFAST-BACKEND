@@ -18,15 +18,15 @@ class Note {
   constructor({
     auteurId,
     cibleId,
-    typeCible,
     valeur,
+    typeCible,
     idPublic,
   }) {
     this.auteurId = auteurId;
     this.cibleId = cibleId;
     this.typeCible = typeCible;
-    this.valeur = valeur;
     this.idPublic = idPublic;
+    this.valeur = valeur
   }
 
   /**

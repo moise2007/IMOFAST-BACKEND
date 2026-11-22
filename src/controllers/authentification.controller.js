@@ -16,7 +16,7 @@ const register = async (req, res) => {
     const result = await authentificationService.register(req.body);
     // creation des cookies et envoie des tokens
     const data = await creerSession(result.user.id, result.user.role ?? result.role)
-    envoyerTokens(req,res, {...data,user: result.user},"votre compte a ete creer avec success")
+    envoyerTokens(req,res, {...data,user: result.user},req.t("responses:backend.auth.registered"))
 };
 
 /**
@@ -28,11 +28,11 @@ const register = async (req, res) => {
  */
 const login = async (req, res) => {
     const result = await authentificationService.login(req.body);
-    
+
 
     // creation des cookies et envoie des tokens
     const data = await creerSession(result.user.id, result.user.role ?? result.role)
-    envoyerTokens(req,res, {...data,user:result.user},"connexion a votre compte reussie")
+    envoyerTokens(req,res, {...data,user:result.user},req.t("responses:backend.auth.loggedIn"))
 };
 
 /**
@@ -45,8 +45,7 @@ const login = async (req, res) => {
 const logout = async (req, res) => {
     await authentificationService.logout(req.sessionId);
 
-    res.clearCookie("token", { path: "/" })
-    res.clearCookie("refresh", { path: "/api/auth/refresh" })
+    require("../utils/session").clearSessionCookies(res);
     res.json({ success: true })
 };
 
@@ -66,7 +65,7 @@ const verifyGoogle = async (req, res) => {
     res.status(200).json({
         success: true,
         connexion: result.exist,
-        message: "Authentification Google réussie.",
+        message: req.t("responses:backend.auth.googleAuthenticated"),
         data: result,
     });
 };
@@ -85,7 +84,7 @@ const canUseIdentifiant = async (req, res) => {
     res.status(200).json({
         success: true,
         connexion: result.exist,
-        message: "Authentification Google réussie.",
+        message: req.t("responses:backend.auth.identifierChecked"),
         data: result,
     });
 };
@@ -105,7 +104,7 @@ const sendOtp = async (req, res) => {
 
     res.status(200).json({
         success: true,
-        message: "Code OTP envoyé avec succès.",
+        message: req.t("responses:backend.auth.otpSent"),
         data: result,
     });
 };
@@ -122,7 +121,7 @@ const verifyOtp = async (req, res) => {
 
     res.status(200).json({
         success: true,
-        message: "Code OTP vérifié avec succès.",
+        message: req.t("responses:backend.auth.otpVerified"),
         data: result,
     });
 };
@@ -139,7 +138,7 @@ const verifyEmail = async (req, res) => {
 
     res.status(200).json({
         success: true,
-        message: "Adresse email vérifiée avec succès.",
+        message: req.t("responses:backend.auth.emailVerified"),
         data: result,
     });
 };
@@ -156,7 +155,7 @@ const verifyTelephone = async (req, res) => {
 
     res.status(200).json({
         success: true,
-        message: "Numéro de téléphone vérifié avec succès.",
+        message: req.t("responses:backend.auth.phoneVerified"),
         data: result,
     });
 };
@@ -179,7 +178,7 @@ const updateIdentifier = async (req, res) => {
 
     res.status(200).json({
         success: true,
-        message: "Identifiant mis à jour avec succès.",
+        message: req.t("responses:backend.auth.identifierUpdated"),
         data: result,
     });
 };
@@ -199,7 +198,7 @@ const updatePassword = async (req, res) => {
 
     res.status(200).json({
         success: true,
-        message: "Mot de passe mis à jour avec succès.",
+        message: req.t("responses:backend.auth.passwordUpdated"),
         data: result,
     });
 };
@@ -219,7 +218,7 @@ const forgotPassword = async (req, res) => {
 
     res.status(200).json({
         success: true,
-        message: "Processus de récupération du mot de passe lancé.",
+        message: req.t("responses:backend.auth.passwordRecoveryStarted"),
         data: result,
     });
 };
@@ -239,7 +238,7 @@ const forgotPasswordUpdate = async (req, res) => {
 
     res.status(200).json({
         success: true,
-        message: "le mot de passe a été réinitialiser avec succèss",
+        message: req.t("responses:backend.auth.passwordReset"),
         data: result,
     });
 };
@@ -251,38 +250,30 @@ const forgotPasswordUpdate = async (req, res) => {
  * @param {import("express").Response} res
  * @returns {Promise<void>}
  */
-const refreshToken = async(req,res)=>{
-    const isMobile = (req) => req.headers["x-client"] === "mobile"
-    const hash = (t) => crypto.createHash("sha256").update(t).digest("hex")
-    const refreshToken = isMobile(req) ? req.body?.refreshToken : req.signedCookies?.refresh
-
-    if (!refreshToken) return res.status(401).json({ success: false, reconnection: true })
-
-    // Retrouver la session par le hash du refresh
-    const snap = await db.collection("session")
-    .where("refreshHash", "==", hash(refreshToken)).limit(1).get()
-
-    if (snap.empty) {
-        // Refresh inconnu : peut-être un token déjà utilisé et volé -> voir "détection de réutilisation"
-        return res.status(401).json({ success: false, reconnection: true })
-    }
-
-    const doc = snap.docs[0]
-    const s = doc.data()
-    if (new Date(s.expireAt) < new Date()) {
-        await doc.ref.delete()
-        return res.status(401).json({ success: false, reconnection: true })
-    }
-
-    // Rotation : nouveau refresh, l'ancien devient invalide
-    const newRefresh = crypto.randomBytes(48).toString("hex")
-    await doc.ref.update({ refreshHash: hash(newRefresh), expireAt: new Date(Date.now() + 30 * 24 * 3600 * 1000),})
-    const accessToken = createAccessToken(doc.id)
-
-    return envoyerTokens(req, res, { accessToken, refreshToken: newRefresh, user: undefined })
-}
+const refreshToken = require('../utils/asyncHandler').asyncHandler(async (req, res) => {
+    const refresh = req.headers['x-client'] === 'mobile' ? req.body?.refreshToken : (req.signedCookies?.refresh ?? req.cookies?.refresh);
+    const identity = await require('../services/ApiService/session.service').resolveSession({ refreshToken: refresh, refresh: true });
+    if (!identity) return res.status(401).json({ success: false, reconnection: true, message: req.t('errors:backend.sessionInvalid') });
+    return envoyerTokens(req, res, { ...identity.tokens, user: undefined }, req.t('responses:backend.sessionRefreshed'));
+});
+const me = require('../utils/asyncHandler').asyncHandler(async (req, res) => {
+    const session = require('../utils/session');
+    const identity = await require('../services/ApiService/session.service').resolveSession({
+        accessToken: session.getToken(req), refreshToken: req.signedCookies?.refresh ?? req.cookies?.refresh,
+    });
+    res.set('Cache-Control', 'no-store');
+    if (!identity) return res.json({ success: true, role: 'visiteur', user: null, onboarding: null });
+    if (identity.tokens) session.writeSessionCookies(res, identity.tokens);
+    const user = identity.user;
+    return res.json({ success: true, role: identity.role,
+        user: { idPublic: user.idPublic, nom: user.nom, prenom: user.prenom, photoProfil: user.photoProfil,
+            verifie: identity.role === 'admin' ? user.verified === true : Boolean(user.verification?.emailVerifie || user.verification?.telephoneVerifie) },
+        onboarding: identity.role === 'bailleur' ? (user.onboarding || { etape: 'bien', termine: false }) : null,
+    });
+});
 
 module.exports = {
+    me,
     register,
     login,
     logout,

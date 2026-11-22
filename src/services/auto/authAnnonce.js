@@ -1,5 +1,5 @@
 const { admin, db } = require("../../config/firebase")
-const cron = require("node-cron") 
+const cron = require("node-cron")
 
 let enCours = false
 
@@ -31,9 +31,10 @@ async function traiterToutesLesAnnonces({ tailleLot = 200, delai = 100 }) {
             let opsDansLot = 0
 
             for (const doc of snapshot.docs) {
-                const champsAMettreAJour = construireMiseAJour(doc) 
+                const champsAMettreAJour = construireMiseAJour(doc)
                 if (champsAMettreAJour) {
                     batch.update(doc.ref, champsAMettreAJour)
+                    batch.set(db.collection("annonce_motscles").doc(doc.data().idPublic), {status: "expirer"}, {merge: true})
                     opsDansLot++
                 }
             }
@@ -65,7 +66,7 @@ async function traiterToutesLesAnnonces({ tailleLot = 200, delai = 100 }) {
 function construireMiseAJour(doc) {
     const data = doc.data()
     if (data?.dateExpiration && new Date(data?.dateExpiration) < new Date() && data?.status === "publier") {
-        return { status: "expirer" }
+        return { status: "expirer", estPubliee: false }
     }
     return null
 }

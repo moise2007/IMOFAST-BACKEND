@@ -73,10 +73,11 @@ exports.countByBienAndBailleur = async (bienId, bailleurId) => {
  * @returns {Promise<Object>} Annonce créée.
  */
 exports.create = async (annonce) => {
-  await annonceCollection.add({
-    ...annonce,
-  });
-
+  const bien = await exports.findBienById(annonce.bienId);
+  const batch = db.batch();
+  batch.create(annonceCollection.doc(), annonce);
+  require('./annonce-keywords.repository').writeIndex(batch, annonce, bien || {});
+  await batch.commit();
   return annonce;
 };
 
@@ -93,6 +94,7 @@ exports.findByIdPublic = async (idPublic) => {
     .get();
 
   if (snapshot.empty) {
+    console.log("c'est vide")
     return null;
   }
 
@@ -165,75 +167,69 @@ exports.existsFavori = async ({ annonceId, locataireId }) => {
  * @param {number} params.limit Nombre d'éléments par page.
  * @returns {Promise<Array>} Documents Firestore.
  */
-exports.findMany = async ({ criteres = {}, page, limit }) => {
-  let query = annonceCollection;
-
-  /**
-   * Application des critères Firestore.
-   *
-   * Les critères qui ne correspondent pas directement
-   * à une propriété Firestore peuvent être traités dans
-   * le service.
-   */
-  Object.entries(criteres).forEach(([field, value]) => {
-    if (
-      value !== undefined &&
-      value !== null &&
-      value !== "" &&
-      typeof value !== "object"
-    ) {
-      query = query.where(field, "==", value);
-    }
-  });
-
-  /**
-   * Tri par date de création.
-   */
-  query = query.orderBy("createdAt", "desc");
-
-  /**
-   * Pagination.
-   */
-  const offset = (page - 1) * limit;
-
-  if (offset > 0) {
-    const previousSnapshot = await query.limit(offset).get();
-
-    if (!previousSnapshot.empty) {
-      const lastDocument = previousSnapshot.docs[previousSnapshot.docs.length - 1];
-      query = query.startAfter(lastDocument);
-    }
+// Property criteria belong to the bien collection, not to the annonce document.
+const queryGroups = async (criteria) => {
+  let propertyQuery = bienCollection;
+  let propertyFiltered = false;
+  for (const [key, field] of Object.entries({ ville: "localisation.ville", quartier: "localisation.quartier", typeBien: "typeBien", type: "type", nature: "nature" })) {
+    if (criteria[key] == null || criteria[key] === "") continue;
+    propertyFiltered = true;
+    if (["ville", "quartier"].includes(key)) {
+      const value = criteria[key];
+      const variants = [...new Set([value, value.replace(/(^|\s)\S/g, letter => letter.toUpperCase())])];
+      propertyQuery = propertyQuery.where(field, "in", variants);
+    } else propertyQuery = propertyQuery.where(field, "==", criteria[key]);
   }
-
-  const snapshot = await query.limit(limit).get();
-
-  return snapshot.docs.map((doc) => doc.data());
+  for (const [key, field] of Object.entries({ nombreChambre: "chambres.nombre", nombreDouche: "salleBains.nombre" })) {
+    if (criteria[key] != null) { propertyFiltered = true; propertyQuery = propertyQuery.where(field, ">=", criteria[key]); }
+  }
+  let groups = [null];
+  if (propertyFiltered) {
+    const properties = await propertyQuery.get();
+    const ids = properties.docs.map(doc => doc.data().idPublic).filter(Boolean);
+    groups = [];
+    // Two location `in` filters have already been applied in the separate property query.
+    for (let index = 0; index < ids.length; index += 30) groups.push(ids.slice(index, index + 30));
+  }
+  return groups.map(ids => {
+    let query = annonceCollection;
+    if (ids) query = query.where("bienId", "in", ids);
+    for (const field of ["bailleurId", "devise", "status"]) if (criteria[field] != null) query = query.where(field, "==", criteria[field]);
+    if (criteria.natureAnnonce) query = query.where("nature", "==", criteria.natureAnnonce);
+    if (criteria.prixMin != null) query = query.where("recherche.minPrix", ">=", criteria.prixMin);
+    if (criteria.prixMax != null) query = query.where("recherche.minPrix", "<=", criteria.prixMax);
+    const search = criteria.search || criteria.titre;
+    const searchWord = search?.toLowerCase().match(/[\p{L}\p{N}]{3,}/u)?.[0] ?? search?.trim().toLowerCase();
+    if (searchWord) query = query.where("recherche.motCles", "array-contains", searchWord);
+    return query;
+  });
 };
 
-/**
- * Compte le nombre total d'annonces correspondant aux critères.
- *
- * @param {Object} params
- * @param {Object} params.criteres Critères Firestore.
- * @returns {Promise<number>} Nombre total d'annonces.
- */
-exports.countMany = async ({ criteres = {} }) => {
-  let query = annonceCollection;
-
-  Object.entries(criteres).forEach(([field, value]) => {
-    if (
-      value !== undefined &&
-      value !== null &&
-      value !== "" &&
-      typeof value !== "object"
-    ) {
-      query = query.where(field, "==", value);
-    }
+exports.findPage = async ({ criteres = {}, page = 1, limit = 10 }) => {
+  if (['search', 'titre', 'devise', 'ville', 'quartier', 'typeBien', 'type', 'nature', 'natureAnnonce', 'prixMin', 'prixMax', 'duree', 'nombreDurees', 'nombreChambre', 'nombreDouche'].some(k => criteres[k] != null && criteres[k] !== ''))
+    return require('./annonce-keywords.repository').search({ criteres, page, limit });
+  const queries = await queryGroups(criteres);
+  const sort = criteres.sort ?? "recent";
+  const priceFilter = criteres.prixMin != null || criteres.prixMax != null;
+  const field = sort.startsWith("prix") || priceFilter ? "recherche.minPrix" : sort === "populaire" ? "statistiques.vues" : "createdAt";
+  const direction = sort === "prixCroissant" ? "asc" : "desc";
+  const [snapshots, counts] = await Promise.all([
+    Promise.all(queries.map(query => query.orderBy(field, direction).orderBy(admin.firestore.FieldPath.documentId()).limit(page * limit).get())),
+    Promise.all(queries.map(query => query.count().get())),
+  ]);
+  const value = doc => field.split('.').reduce((value, key) => value?.[key], doc.data());
+  const number = val => val?.toMillis ? val.toMillis() : val ?? 0;
+  const docs = snapshots.flatMap(snapshot => snapshot.docs).sort((a,b) => {
+    const difference = number(value(a)) - number(value(b));
+    return (direction === 'asc' ? difference : -difference) || a.id.localeCompare(b.id);
   });
-
-  const snapshot = await query.count().get();
-
-  return snapshot.data().count;
+  return { annonces: docs.slice((page - 1) * limit, page * limit).map(doc => doc.data()), totalItems: counts.reduce((total,snapshot) => total + snapshot.data().count, 0) };
+};
+exports.findMany = async params => (await exports.findPage(params)).annonces;
+exports.countMany = async ({ criteres = {} }) => {
+  const queries = await queryGroups(criteres);
+  const snapshots = await Promise.all(queries.map(query => query.count().get()));
+  return snapshots.reduce((sum, snapshot) => sum + snapshot.data().count, 0);
 };
 
 /**
@@ -243,28 +239,20 @@ exports.countMany = async ({ criteres = {} }) => {
  * @param {Object} data Données à modifier.
  * @returns {Promise<Object>} Données mises à jour.
  */
-exports.update = async (idPublic, data) => {
-  const snapshot = await annonceCollection
-    .where("idPublic", "==", idPublic)
-    .limit(1)
-    .get();
-
-  if (snapshot.empty) {
-    return null;
-  }
-
+exports.update = async (idPublic, data) => db.runTransaction(async tx => {
+  const snapshot = await tx.get(annonceCollection.where('idPublic', '==', idPublic).limit(1));
   const document = snapshot.docs[0];
-
-  await document.ref.update({
-    ...data,
-    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-  });
-
-  return {
-    ...document.data(),
-    ...data,
-  };
-};
+  if (!document) return null;
+  const bienSnapshot = await tx.get(bienCollection.where('idPublic', '==', document.data().bienId).limit(1));
+  const merged = { ...document.data(), ...data, updatedAt: admin.firestore.Timestamp.now() };
+  if (data.loyer) {
+    const prices = (Array.isArray(data.loyer) ? data.loyer : [data.loyer]).map(p => p.prix);
+    merged.recherche = { ...merged.recherche, minPrix: Math.min(...prices), maxPrix: Math.max(...prices) };
+  }
+  tx.update(document.ref, merged);
+  require('./annonce-keywords.repository').writeIndex(tx, merged, bienSnapshot.docs[0]?.data() || {});
+  return merged;
+});
 
 /**
  * Supprime une annonce ainsi que ses données dépendantes.
@@ -293,6 +281,7 @@ exports.remove = async (idPublic) => {
   const annonceDocument = annonceSnapshot.docs[0];
 
   batch.delete(annonceDocument.ref);
+  batch.delete(db.collection("annonce_motscles").doc(idPublic));
 
   /**
    * Suppression des favoris associés.
@@ -317,4 +306,17 @@ exports.remove = async (idPublic) => {
   });
 
   await batch.commit();
+};
+exports.favorisForAnnonces = async (ids, locataireId) => {
+  const found = new Map();
+  for (let index = 0; index < ids.length; index += 30) {
+    const result = await favorisCollection.where("locataireId", "==", locataireId).where("annonceId", "in", ids.slice(index, index + 30)).get();
+    result.docs.forEach(doc => found.set(doc.data().annonceId, doc.data()));
+  }
+  return found;
+};
+
+exports.findByBien = async bienId => {
+  const snapshot = await annonceCollection.where("bienId", "==", bienId).get();
+  return snapshot.docs.map(doc => { const a = doc.data(); return { idPublic: a.idPublic, titre: a.titre, status: a.status }; });
 };

@@ -1,0 +1,14 @@
+{
+  "report": {
+    "subject": "Imofast listing report",
+    "body": "Report: {{id}}\nListing: {{cible}}\nReason: {{raison}}\nDescription: {{description}}",
+    "reasons": {
+      "contenu_inapproprie": "Inappropriate content",
+      "arnaque": "Scam",
+      "fausses_informations": "False information",
+      "harcelement": "Harassment",
+      "doublon": "Duplicate",
+      "autre": "Other"
+    }
+  }
+}

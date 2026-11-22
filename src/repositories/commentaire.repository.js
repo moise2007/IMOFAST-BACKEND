@@ -11,9 +11,13 @@ const COMMENTAIRE_COLLECTION = "commentaire";
  * @returns {Promise<import("firebase-admin").firestore.DocumentSnapshot>}
  */
 const create = async (data) => {
-  const documentReference = await db
-    .collection(COMMENTAIRE_COLLECTION)
-    .add(data);
+  const { authorRef, increment } = require('./activite.repository');
+  const author = await authorRef(data.role, data.auteurId);
+  const documentReference = db.collection(COMMENTAIRE_COLLECTION).doc();
+  const batch = db.batch();
+  batch.create(documentReference, data);
+  increment(batch, author, 'commentaires');
+  await batch.commit();
 
   return documentReference.get();
 };
@@ -159,10 +163,14 @@ const addResponse = async (
     .collection(COMMENTAIRE_COLLECTION)
     .doc(documentId);
 
-  await documentReference.update({
-    reponses: [...responses, response],
-    updatedAt: admin.firestore.Timestamp.now(),
+  const { authorRef, increment } = require('./activite.repository');
+  const author = await authorRef(response.role, response.auteurId);
+  const batch = db.batch();
+  batch.update(documentReference, {
+    reponses: admin.firestore.FieldValue.arrayUnion(response), updatedAt: admin.firestore.Timestamp.now(),
   });
+  increment(batch, author, 'reponses');
+  await batch.commit();
 
   return documentReference.get();
 };

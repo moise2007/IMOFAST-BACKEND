@@ -34,7 +34,7 @@ const isMobile = (req) =>
  */
 const getCookieOptions = () => ({
     httpOnly: true,
-    secure: isProd,
+    secure: isProd || process.env.NODE_ENV === "production",
     sameSite: isProd ? "none" : "lax",
     path: "/",
     domain: isProd ? ".imofast.org" : undefined,
@@ -54,7 +54,7 @@ const getCookieOptions = () => ({
  */
 async function creerSession(userId, role) {
     if (!userId || !role) {
-        throw new Error("userId et role sont obligatoires.");
+        throw new Error("errors:backend.invalidInput");
     }
 
     const sessionRef = db.collection("session").doc();
@@ -90,7 +90,7 @@ async function creerSession(userId, role) {
  */
 function createAccessToken(idsession) {
     if (!idsession) {
-        throw new Error("L'identifiant de session est obligatoire.");
+        throw new Error("errors:backend.invalidInput");
     }
 
     return jwt.sign(
@@ -119,10 +119,11 @@ function envoyerTokens(
     req,
     res,
     { accessToken, refreshToken, user },
-    message = "Tokens envoyés avec succès."
+    message = null
 ) {
+    message ||= req.t ? req.t("responses:backend.sessionRefreshed") : require("../config/i18n.config").t("responses:backend.sessionRefreshed");
     if (!accessToken || !refreshToken) {
-        throw new Error("Les tokens sont obligatoires.");
+        throw new Error("errors:backend.invalidInput");
     }
 
     // Client mobile : envoi dans le JSON
@@ -138,9 +139,16 @@ function envoyerTokens(
         });
     }
 
-    // Client web : envoi dans les cookies
-    const cookieOptions = getCookieOptions();
 
+    // Client web : envoi dans les cookies
+    writeSessionCookies(res, { accessToken, refreshToken });
+
+    return res.json({ success: true, data: { user }, message });
+}
+
+function writeSessionCookies(res, { accessToken, refreshToken }) {
+    const cookieOptions = getCookieOptions();
+    res.clearCookie("refresh", { ...cookieOptions, path: "/api/auth/refresh" });
     res.cookie("token", accessToken, {
         ...cookieOptions,
         maxAge: ACCESS_TOKEN_MAX_AGE,
@@ -149,13 +157,7 @@ function envoyerTokens(
     res.cookie("refresh", refreshToken, {
         ...cookieOptions,
         maxAge: REFRESH_TOKEN_MAX_AGE,
-        path: "/api/auth/refresh",
-    });
-
-    return res.json({
-        success: true,
-        data: { user },
-        message,
+        path: "/api/auth",
     });
 }
 
@@ -272,10 +274,7 @@ function clearSessionCookies(res) {
         ...cookieOptions,
     });
 
-    res.clearCookie("refresh", {
-        ...cookieOptions,
-        path: "/api/auth/refresh",
-    });
+    for (const path of ["/api/auth", "/api/auth/refresh"]) res.clearCookie("refresh", { ...cookieOptions, path });
 }
 
 // ======================================================
@@ -283,6 +282,7 @@ function clearSessionCookies(res) {
 // ======================================================
 
 module.exports = {
+    writeSessionCookies,
     creerSession,
     createSession: creerSession,
     createAccessToken,

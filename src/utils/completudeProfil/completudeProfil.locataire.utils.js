@@ -30,7 +30,7 @@ const REGLES_COMPLETUDE = [
   // Localisation
   { cle: "localisation.pays",     label: "Pays",     poids: 2, rempli: (p) => filled(p.localisation?.pays) },
   { cle: "localisation.ville",    label: "Ville",    poids: 3, rempli: (p) => filled(p.localisation?.ville) },
-  { cle: "localisation.quartier", label: "Quartier", poids: 3, rempli: (p) => filled(p.localisation?.quartier) },
+  { cle: "localisation.quartier", label: "Quartier", poids: 3, rempli: (p) => filled(p.localisation?.quartier) || filled(p.localisation?.quatier) },
   { cle: "localisation.adresse",  label: "Adresse",  poids: 2, rempli: (p) => filled(p.localisation?.adresse) },
 
   // Vérifications

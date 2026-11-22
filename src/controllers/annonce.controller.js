@@ -2,9 +2,11 @@
 
 const { asyncHandler } = require("../utils/asyncHandler");
 const annonceService = require("../services/ApiService/annonce.service");
+const rechercheAnnonceService = require("../services/ApiService/rechercheAnnonce.service");
 
 const createAnnonceBailleur = asyncHandler(async (req, res) => {
     console.log("la procedure de creation d'annonce a commencer")
+    console.log(req.body)
     const annonce = await annonceService.createAnnonce({
         data: req.body,
         user: req.user,
@@ -28,6 +30,11 @@ const getAnnonces = asyncHandler(async (req, res) => {
     user: req.user,
     role: req.role,
   });
+  await rechercheAnnonceService.saveSearch({
+    filters: req.validatedQuery,
+    user: req.user,
+    role: req.role,
+  });
 
   return res.status(200).json({
     success: true,
@@ -36,6 +43,11 @@ const getAnnonces = asyncHandler(async (req, res) => {
       ns: "responses",
     }),
   });
+});
+
+const getRecherchesRecentes = asyncHandler(async (req, res) => {
+  const recherches = await rechercheAnnonceService.recentSearches(req.user);
+  return res.status(200).json({ success: true, recherches });
 });
 
 const getAnnonce = asyncHandler(async (req, res) => {
@@ -86,9 +98,13 @@ const deleteAnnonceBailleur = asyncHandler(async (req, res) => {
     });
 });
 
+const getSelections = asyncHandler(async (req, res) => res.json({ success: true,
+  ...await require('../services/ApiService/selection-annonce.service').getSelections() }));
 module.exports = {
+    getSelections,
     createAnnonceBailleur,
     getAnnonces,
+    getRecherchesRecentes,
     getAnnonce,
     updateAnnonceBailleur,
     deleteAnnonceBailleur,

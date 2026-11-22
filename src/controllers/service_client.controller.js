@@ -15,7 +15,7 @@ const getDemandes = asyncHandler(async (req, res) => {
     return res.status(200).json({
         success: true,
         ...result,
-        msg: "Vos demandes ont été récupérées avec succès.",
+        msg: req.t("responses:backend.support.loaded"),
     });
 });
 
@@ -53,7 +53,7 @@ const createMessage = asyncHandler(async (req, res) => {
     return res.status(201).json({
         success: true,
         message,
-        msg: "Votre message a été reçu avec succès.",
+        msg: req.t("responses:backend.support.messageReceived"),
     });
 });
 
@@ -71,7 +71,7 @@ const createReclamation = asyncHandler(async (req, res) => {
     return res.status(201).json({
         success: true,
         reclamation,
-        msg: "Votre réclamation a été reçue avec succès.",
+        msg: req.t("responses:backend.support.claimReceived"),
     });
 });
 
@@ -89,11 +89,12 @@ const createSignalement = asyncHandler(async (req, res) => {
     return res.status(201).json({
         success: true,
         signalement,
-        msg: "Votre signalement a été reçu avec succès.",
+        msg: req.t("responses:backend.support.reportReceived"),
     });
 });
 
 module.exports = {
+    getContacts: asyncHandler(async (req, res) => res.json({ success: true, contacts: await serviceClientService.getContacts() })),
     getDemandes,
     getDemande,
     createMessage,

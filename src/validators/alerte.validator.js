@@ -1,37 +1,27 @@
 const { z } = require("zod");
 
-const createAlerteSchema = z.object({
-  type: z.enum(["appartement", "villa", "duplex", "studio", "chambre"], {
-    message: "type invalide (appartement, villa, duplex, studio ou chambre)",
-  }).optional(),
-  nature: z.enum(["moderne", "simple", "meubler"], {
-    message: "nature invalide (moderne, simple ou meubler)",
-  }).optional(),
-  limit: z.string().trim().optional(),
-  page: z.string().trim().optional(),
-  natureAnnonce: z.enum(["vente", "location"], {
-    message: "nature de l'annonce invalide (vente ou location)",
-  }).optional(),
-  ville: z
-    .string({ message: "la ville est obligatoire" })
-    .trim()
-    .min(3, "la ville doit contenir au moins 3 caractères")
-    .toLowerCase(),
-  quartier: z.string().trim().toLowerCase().optional(),
-  prix: z.coerce
-    .number({ message: "le prix doit être un nombre" })
-    .int("le prix doit être un entier")
-    .min(1000, "le prix est trop bas")
-    .optional(),
-  frequence: z.string().trim().optional(),
-  duree: z.coerce.number().int().positive().optional(),
-  caution: z.coerce.number().int().min(0).optional(),
-  nombreChambre: z.coerce.number().int().min(0).optional(),
-  nombreDouche: z.coerce.number().int().min(0).optional(),
-  equipements: z.array(z.string().trim()).max(30).optional(),
-  securite: z.array(z.string().trim()).max(30).optional(),
+const numeric = (min = 0) => z.number({ error: "number" }).int({ error: "integer" }).min(min, { error: "minimum" }).max(1e12, { error: "maximum" });
+const creationFields = z.object({
+  type: z.enum(["appartement", "villa", "duplex", "studio", "chambre"], { error: "choice" }).optional(),
+  nature: z.enum(["moderne", "simple", "meubler"], { error: "choice" }).optional(),
+  natureAnnonce: z.enum(["vente", "location"], { error: "choice" }).optional(),
+  ville: z.string({ error: "required" }).trim().min(3, { error: "location" }).max(120, { error: "location" }).toLowerCase(),
+  quartier: z.string({ error: "text" }).trim().max(120, { error: "location" }).toLowerCase().optional(),
+  prix: numeric(1000).optional(), prixMin: numeric().optional(), prixMax: numeric(1000).optional(),
+  frequence: z.enum(["jour", "semaine", "mois", "annee"], { error: "choice" }).optional(),
+  duree: numeric(1).optional(), caution: numeric().optional(),
+  nombreChambre: numeric().optional(), nombreDouche: numeric().optional(),
+  equipements: z.array(z.string().trim().min(1).max(80)).max(30).optional(),
+  securite: z.array(z.string().trim().min(1).max(80)).max(30).optional(),
+}).strict();
+const createAlerteSchema = creationFields.superRefine((data, ctx) => {
+  if (data.prixMin != null && data.prixMax != null && data.prixMin > data.prixMax)
+    ctx.addIssue({ code: "custom", path: ["prixMin"], message: "range" });
+  if (data.natureAnnonce === "vente") {
+    for (const field of ["frequence", "duree", "caution"]) if (data[field] != null)
+      ctx.addIssue({ code: "custom", path: [field], message: "sale" });
+  }
 });
-
 
 const emptyToUndefined = (v) =>
   v === "" || v === "null" || v === "undefined" ? undefined : v;
@@ -64,7 +54,7 @@ const getAlertesSchema = z
   );
 
 const deleteAlerteSchema = z.object({
-  id: z.string({ message: "l'identifiant est obligatoire" }).trim().min(1, "identifiant invalide").max(50, "identifiant invalide"),
+  id: z.string({ message: "l'identifiant est obligatoire" }).trim().min(1, "identifiant invalide").max(50, "identifiant invalide").refine((id) => !id.includes("/") && id !== "." && id !== "..", "identifiant invalide"),
 });
 
 // source = "body" (défaut), "query" ou "params"
@@ -74,11 +64,11 @@ const validate = (schema, source = "body") => (req, res, next) => {
   if (!result.success) {
     return res.status(400).json({
       success: false,
-      message: "Données invalides",
-      errors: result.error.issues.map((i) => ({
-        champ: i.path.join("."),
-        message: i.message,
-      })),
+      message: req.t("errors:alerte.invalid"),
+      errors: Object.fromEntries(result.error.issues.map((issue) => [
+        issue.path.join(".") || "form", req.t(`errors:alerte.validation.${["number", "integer", "minimum", "maximum", "choice", "required", "location", "text", "range", "sale"].includes(issue.message) ? issue.message : "invalid"}`),
+      ])),
+      errorCodes: Object.fromEntries(result.error.issues.map(issue => [issue.path.join(".") || "form", issue.code])),
     });
   }
 
@@ -94,36 +84,14 @@ const getAlerteSchema = z.object({
     .string({ message: "l'identifiant est obligatoire" })
     .trim()
     .min(1, "identifiant invalide")
-    .max(50, "identifiant invalide"),
+    .max(50, "identifiant invalide").refine((id) => !id.includes("/") && id !== "." && id !== "..", "identifiant invalide"),
 });
 
-
-const champsModifiables = {
-  nature: true,
-  quartier: true,
-  prix: true,
-  frequence: true,
-  duree: true,
-  caution: true,
-  nombreChambre: true,
-  nombreDouche: true,
-  equipements: true,
-  securite: true,
-};
-
-const updateAlerteSchema = createAlerteSchema
-  .pick(champsModifiables)
-  .partial()   
-  .strict() 
-  .refine((d) => Object.keys(d).length > 0, {
-    message: "aucun champ à modifier",
-  });
 
 module.exports = {
   createAlerteSchema,
   getAlertesSchema,
   getAlerteSchema,
-  updateAlerteSchema,
   deleteAlerteSchema,
   validate,
 };

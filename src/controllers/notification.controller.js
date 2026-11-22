@@ -1,6 +1,7 @@
 const { asyncHandler } = require("../utils/asyncHandler");
 
 const notificationService = require("../services/ApiService/notification.service");
+const { emitNotification } = require("../notifications/realtime");
 
 /**
  * Crée une notification.
@@ -12,6 +13,7 @@ const createNotification = asyncHandler(async (req, res) => {
     await notificationService.createNotification({
       data: req.validatedBody,
     });
+  emitNotification(notification);
 
   return res.status(201).json({
     success: true,
@@ -104,6 +106,15 @@ const setAllLuNotification = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
+  subscribe: asyncHandler(async (req, res) => {
+    await notificationService.subscribe({ ...req.validatedBody, user: req.user, role: req.role });
+    res.json({ success: true });
+  }),
+  unsubscribe: asyncHandler(async (req, res) => res.json({ success: true,
+    ...await notificationService.unsubscribe({ ...req.validatedBody, user: req.user, role: req.role }) })),
+  getPreferences: (req, res) => res.json({ success: true, preferences: notificationService.getPreferences(req.user) }),
+  setPreferences: asyncHandler(async (req, res) => res.json({ success: true,
+    preferences: await notificationService.setPreferences({ user: req.user, role: req.role, preferences: req.validatedBody }) })),
   createNotification,
   getNotifications,
   deleteNotification,
