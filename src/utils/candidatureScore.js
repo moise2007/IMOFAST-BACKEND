@@ -14,9 +14,36 @@ function calculerNoteCandidature(locataire, annonce, bien = {}) {
   return Math.max(0, Math.min(100, Math.round(score)));
 }
 function appointmentDate(visite = {}) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(visite.dateSouhaitee || '') || !/^([01]\d|2[0-3]):[0-5]\d$/.test(visite.heureSouhaitee || '')) return null;
-  const date = new Date(`${visite.dateSouhaitee}T${visite.heureSouhaitee}:00+01:00`);
-  if (!Number.isFinite(+date) || new Date(+date + 3600000).toISOString().slice(0, 10) !== visite.dateSouhaitee) return null;
+  const { dateSouhaitee, heureSouhaitee } = visite;
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateSouhaitee || "")) {
+    return null;
+  }
+
+  const heure = heureSouhaitee || "00:00";
+
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(heure)) {
+    return null;
+  }
+
+  const date = new Date(`${dateSouhaitee}T${heure}:00+01:00`);
+
+  if (!Number.isFinite(date.getTime())) {
+    return null;
+  }
+
+  // Vérification de la date réelle (ex: éviter le 31 février)
+  const [year, month, day] = dateSouhaitee.split("-").map(Number);
+  const check = new Date(Date.UTC(year, month - 1, day));
+
+  if (
+    check.getUTCFullYear() !== year ||
+    check.getUTCMonth() !== month - 1 ||
+    check.getUTCDate() !== day
+  ) {
+    return null;
+  }
+
   return date;
 }
 module.exports = { calculerNoteCandidature, appointmentDate };

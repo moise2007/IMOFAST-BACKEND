@@ -269,6 +269,7 @@ const verifyGoogle = async (data) => {
         throw new AppError("Token Google invalide.",400);
     }
 
+
     let user = await authentificationRepository.findUserByIdentifier({
             role,
             identifiant: googleUser.email.toLowerCase(),
@@ -304,7 +305,6 @@ const verifyGoogle = async (data) => {
 
     return {
         user,
-        sessionId,
         exist
     };
 };

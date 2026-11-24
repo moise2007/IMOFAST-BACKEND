@@ -5,6 +5,7 @@ const candidatureService = require("../services/ApiService/candidature.service")
  * Crée une candidature.
  */
 const createCandidature = asyncHandler(async (req, res) => {
+
   const result = await candidatureService.createCandidature({
     data: req.validatedBody,
     user: req.user,

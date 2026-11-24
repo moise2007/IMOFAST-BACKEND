@@ -159,6 +159,7 @@ function validate(schema, source = "body") {
     const result = schema.safeParse(req[source]);
 
     if (!result.success) {
+      console.log(result.error)
       return res.status(400).json({
         success: false,
         errors: require('../utils/validationErrors').localizedFlatten(result.error, req),

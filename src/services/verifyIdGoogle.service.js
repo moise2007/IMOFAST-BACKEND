@@ -70,7 +70,6 @@ async function verifyGoogleTokenAuth(idToken) {
     }
 
 
-    console.log(decodedToken)
     return {
       success: true,
       user: {

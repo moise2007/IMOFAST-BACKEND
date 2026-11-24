@@ -71,17 +71,13 @@ async function createCandidature({
       }
     );
 
-    const error = new Error(
-      "errors:backend.suspended"
-    );
+    const error = new Error( "errors:backend.suspended");
 
     error.statusCode = 203;
-
     throw error;
   }
 
-  const annonce =
-    await candidatureRepository.findAnnonceByPublicId(
+  const annonce = await candidatureRepository.findAnnonceByPublicId(
       data.annonceId
     );
 
@@ -95,36 +91,15 @@ async function createCandidature({
     error.statusCode = 400;
     throw error;
   }
-
   const locataireId = user.idPublic;
   const bailleurId = annonce.bailleurId;
-
-  const forfaitActif = hasActiveForfait(user);
-
-  const candidaturesRestantes =
-    user?.candidatures?.candidaturesRestantes;
-
-  const peutPostuler =
-    forfaitActif ||
-    (
-      user?.forfait?.type === "aucun" &&
-      candidaturesRestantes != null &&
-      candidaturesRestantes > 0
-    );
-
-  if (!peutPostuler) {
-    return {
-      candidature: null,
-      forfait: true,
-      msg: t("errors:backend.quota"),
-    };
-  }
 
   const idPublic = createId();
   const bien = await candidatureRepository.findBienByPublicId(annonce.bienId);
   if (data.type === 'visite' && (!appointmentDate(data.visite) || +appointmentDate(data.visite) <= Date.now()))
     throw new AppError('errors:backend.futureAppointment', 400);
 
+  console.log(bien)
   const candidature =
     new Candidature({
       idPublic,
@@ -138,6 +113,7 @@ async function createCandidature({
       annonceId: data.annonceId,
     }).toFirebase();
 
+    console.log(candidature)
   await candidatureRepository.createAtomic(candidature, { userId: user.id });
 
   const dataR = {...candidature, locataire : await findByPublicId(locataireId)}
