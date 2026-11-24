@@ -93,18 +93,12 @@ const REGLES_COMPLETUDE_BAILLEUR = [
     poids: 5,
     rempli: (p) => (p.verification?.telephoneVerifie ?? p.telephoneVerifie) === true,
   },
-  {
-    cle: "verification.cniVerified",
-    label: "Pièce d'identité vérifiée",
-    poids: 7,
-    rempli: (p) => (p.verification?.cniVerified ?? p.cniVerified) === true,
-  },
 
   // Activité (10 points)
   {
     cle: "activite.annonces",
     label: "Au moins une annonce créée",
-    poids: 10,
+    poids: 17,
     rempli: (p) => totalAnnonces(p.activite) > 0,
   },
 ];

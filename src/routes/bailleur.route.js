@@ -29,7 +29,7 @@ routerBailleur.post('/onboarding/advance', authBailleur,
 
   routerBailleur.get(
     '/dashboard', authBailleur,
-    validate(z.object({ days: z.coerce.number().int().min(7).max(90).default(7) }), 'query'),
+    validate(z.object({ days: z.coerce.number().int().min(7).max(365).default(7) }), 'query'),
     require('../controllers/dashboard.controller').getDashboard
 );
 

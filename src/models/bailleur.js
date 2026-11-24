@@ -73,7 +73,7 @@ class Bailleur{
                 imageRecto: this.cni.imageRecto ?? null,
                 imageVerso :  this.cni.imageVerso ?? null,
             },
-            imageAnciensContrats : this.imageAnciensContrats,
+            imageAnciensContrats : this.imageAnciensContrats ?? [],
 
 
             // donnees produite automatique
