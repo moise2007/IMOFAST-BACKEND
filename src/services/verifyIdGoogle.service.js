@@ -69,15 +69,16 @@ async function verifyGoogleTokenAuth(idToken) {
       };
     }
 
-    const userRecord = await auth.getUser(decodedToken.uid);
+
+    console.log(decodedToken)
     return {
       success: true,
       user: {
         uidGoogle: decodedToken.uid,
         email: decodedToken.email || null,
         emailVerifie: decodedToken.email_verified === true,
-        nom: userRecord.displayName.split(" ").length > 1 ? userRecord.displayName.split(" ")[1] : null || null,
-        prenom: userRecord.displayName.split(" ")[0] || null,
+        nom: decodedToken?.name?.split(" ").length > 1 ? decodedToken?.name?.split(" ")[1] : null || null,
+        prenom: decodedToken?.name?.split(" ")[0] || null,
         photoProfil: decodedToken.picture || null,
         telephone: decodedToken.phone_number || null
       },

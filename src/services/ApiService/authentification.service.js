@@ -301,7 +301,6 @@ const verifyGoogle = async (data) => {
         exist = true
     }
 
-    const sessionId = await createSession( user.id, role);
 
     return {
         user,

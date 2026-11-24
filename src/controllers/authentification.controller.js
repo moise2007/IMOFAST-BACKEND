@@ -59,15 +59,9 @@ const logout = async (req, res) => {
 const verifyGoogle = async (req, res) => {
     const result = await authentificationService.verifyGoogle(req.body);
 
-    // creation des cookies
-    setCookieSession(res,result?.sessionId,req.body.role)
-
-    res.status(200).json({
-        success: true,
-        connexion: result.exist,
-        message: req.t("responses:backend.auth.googleAuthenticated"),
-        data: result,
-    });
+    // creation des cookies et envoie des tokens
+    const data = await creerSession(result.user.id, result.user.role ?? result.role)
+    envoyerTokens(req,res, {...data,user:result.user},req.t("responses:backend.auth.loggedIn"))
 };
 
 /**
