@@ -31,6 +31,7 @@ const { routerAuthAdmin } = require("./admin/auth.route")
 const { routerBatiment } = require("./batiment.route")
 const { routerAuthentification } = require("./authentification.route")
 const { routerUpload } = require("./upload.route")
+const { routerSeo } = require("./seo.route")
 
 
 const router = express.Router()
@@ -64,6 +65,7 @@ router.use("/service-client",limitGlobal,routerServiceClient)
 router.use("/paiement",limitAuth,routerPaiement)
 router.use("/batiment",limitGlobal,routerBatiment)
 router.use("/upload",limitUpload,routerUpload)
+router.use("/seo", limitGlobal,routerSeo)
 router.get("/init",limitGlobal, identifierUtilisateur,(req,res)=>{
     return res.status(200).json({
         success: true,
