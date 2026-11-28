@@ -19,8 +19,14 @@ routerAdmin.use("/statistique",routerStatistiquesAdmin)
 
 
 routerAdmin.use(authAdmin);
+const usersController = require("../../controllers/admin/users.controller");
+routerAdmin.get("/users", usersController.list);
+routerAdmin.post("/users/:group", usersController.save);
+routerAdmin.put("/users/:group/:id", usersController.save);
+routerAdmin.patch("/users/:group/:id", usersController.action);
  
 routerAdmin.get("/dashboard", ctrl.dashboard);
+routerAdmin.get("/analytics", require("../../controllers/admin/analytics.controller").analytics);
 // routerAdmin.get("/inscriptions", ctrl.inscriptions);
  
 // routerAdmin.get("/", ctrl.lister);

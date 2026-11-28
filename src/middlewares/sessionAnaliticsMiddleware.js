@@ -133,7 +133,7 @@ async function sessionMiddleware(req, res, next) {
 
         // Ajout de l'identifiant anonyme à la requête
         req.anonymousId = anonymousId;
-        req.exist
+        req.exist = exist;
         next();
 
     } catch (err) {

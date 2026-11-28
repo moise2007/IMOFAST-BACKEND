@@ -38,7 +38,7 @@ function createHarness() {
   };
   const originalLoad = Module._load;
   Module._load = function (request, parent, isMain) {
-    if (parent?.filename.endsWith("/src/config/socket.io.js") && request === "./firebase") return fakeFirebase;
+    if (request.endsWith("/firebase") && parent?.filename.includes("/src/")) return fakeFirebase;
     if (parent?.filename.endsWith("/src/config/socket.io.js") && request === "../models/message") return {Message: class {}};
     return originalLoad.call(this, request, parent, isMain);
   };

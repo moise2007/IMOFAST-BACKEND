@@ -227,13 +227,14 @@ routerAnalitic.post("/initialize",sessionMiddleware,async(req,res)=>{
     try{
         const location = await getLocationFromIP(req.ip)
         const data = req.body
+        const page = data?.page?.path || "/";
         if(!req.exist){
             const analitic = new Analitic({
                 role: req?.role,
                 userId: req?.userId,
                 inscrit: req?.inscrit,
                 screen: data?.screen,
-                id: req?.anonimousId,
+                id: req?.anonymousId,
                 page: (data?.page?.path == "" ? "/":data?.page?.path) ?? "/",
                 language: data?.language ?? "unknow",
                 theme: data?.theme ?? "light",

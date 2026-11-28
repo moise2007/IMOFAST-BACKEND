@@ -1,12 +1,10 @@
 const {createId} = require("@paralleldrive/cuid2")
 const {notifyNewMessage} = require("../notifications/push/messagePush");
 const {messageNotificationTitle} = require("../notifications/messageTitle");
-const jwt = require("jsonwebtoken");
+const { authenticateSocket } = require("../sockets/auth");
 const { db, admin } = require("./firebase");
 const { Message } = require("../models/message");
 const {Filter} = admin.firestore
-const cookie = require("cookie")
-const cookieParser = require("cookie-parser")
 
 async function getConversationForUser(conversationId, userId) {
     if (typeof conversationId !== "string" || !conversationId.trim()) return null;
@@ -138,75 +136,16 @@ async function deleteMessage(id,auteurId,isLast){
  */
 function initSocket(io){
 
-    io.use(async(socket,next)=>{
-        // recuperation du cookie
-        const cookies = socket.handshake.headers.cookie
-        if (!cookies) {
-            return next(new Error("Non authentifié"));
-        }
-
-        const parsed = cookie.parse(cookies)
-        const cookiesSigned = parsed?.token
-        const token = cookieParser.signedCookie(cookiesSigned,process.env.COOKIE_SECRET)
-        // decode le cookie recu
-        let decoded
-        try{
-            decoded = jwt.verify(token, process.env.JWT_SECRET)
-        }
-        catch(err){
-            console.log({err})
-            return next(new Error("Non authentifié"));
-        }
-
-        //verification de la presence de l'id de la session dans le cookie
-        const sessionId = decoded?.idsession
-        if(!sessionId){
-            return next(new Error("Non authentifié"));
-        }
-
-        //verification de l'existence de la session
-        const sessionDoc = await db.collection("session").doc(sessionId).get()
-        if (!sessionDoc.exists) {
-            return next(new Error("Non authentifié"));
-        }
-
-        //verification de expiration
-        const {expireAt} = sessionDoc.data()
-        if(new Date(expireAt) < new Date()){
-            await db.collection('session').doc(sessionId).delete()
-            return next(new Error("session expirée veuillez vous reconnecter"));
-        }
-
-        //recuperation de utilisateur
-        const userId = sessionDoc.data().userId
-        if(!userId){
-            return next(new Error("utilisateur inexistant"));
-        }
-
-        if(!["locataire","bailleur","admin"].includes(socket.handshake.auth.role)){
-            return next(new Error("le role de l'utilisateur es invalide"));
-        }
-        const userDoc = await db.collection(socket.handshake.auth.role).doc(userId).get()
-        if(!userDoc.exists){
-            return next(new Error("utilisateur inexistant"))
-        }
-
-        const userData = {id:userDoc.id,...userDoc.data()}
-        if(!(userData.verification?.emailVerifie || userData.verification?.telephoneVerifie)){
-            return next(new Error("Veuillez vérifier votre compte avant de continuer"))
-        }
-
-        await db.collection(socket.handshake.auth.role).doc(userId).update({
-            lastConnexion: admin.firestore.Timestamp.now(),
-            enligne: true,
-        });
-
-        //injestion dans la requette
-        socket.user = userData
-        socket.role = socket.handshake.auth.role
-
-        next()
-    })
+    io.use(authenticateSocket);
+    io.use(async (socket, next) => {
+        try {
+            await db.collection(socket.role).doc(socket.user.id).update({
+                lastConnexion: admin.firestore.Timestamp.now(),
+                enligne: true,
+            });
+            next();
+        } catch (error) { next(error); }
+    });
 
     // ================= SOCKET =================
     io.on("connection",(socket)=>{
@@ -240,16 +179,18 @@ function initSocket(io){
             }
         });
 
-        socket.on("leaveConversation", ({conversationId} = {}) => {
-            if (!joinedConversations.has(conversationId)) return;
+        socket.on("leaveConversation", ({conversationId} = {}, callback) => {
+            if (!joinedConversations.has(conversationId)) return callback?.({success: true});
             socket.to(`conversation:${conversationId}`).emit("typingChanged", {conversationId, userId, isTyping: false});
             socket.leave(`conversation:${conversationId}`);
             joinedConversations.delete(conversationId);
+            callback?.({success: true});
         });
 
-        socket.on("typingChanged", ({conversationId, isTyping} = {}) => {
-            if (!joinedConversations.has(conversationId) || typeof isTyping !== "boolean") return;
+        socket.on("typingChanged", ({conversationId, isTyping} = {}, callback) => {
+            if (!joinedConversations.has(conversationId) || typeof isTyping !== "boolean") return callback?.({success: false});
             socket.to(`conversation:${conversationId}`).emit("typingChanged", {conversationId, userId, isTyping});
+            callback?.({success: true});
         });
 
         socket.on("markConversationRead", async ({conversationId, messageId} = {}, callback) => {
